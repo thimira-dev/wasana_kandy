@@ -1,0 +1,105 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ProductService } from "@/lib/services/product-service";
+import { getProductDisplayName } from "@/lib/domain/catalogue";
+import { CustomerProgressBar } from "@/components/public/CustomerProgressBar";
+import { CakeCustomizer } from "@/components/public/CakeCustomizer";
+import { ArrowLeft } from "lucide-react";
+import type { Metadata } from "next";
+
+export const revalidate = 0;
+
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const cake = await ProductService.getProductBySlug(slug);
+
+  if (!cake) {
+    return {
+      title: "Cake Not Found | Wasana Bakers",
+    };
+  }
+
+  const displayName = getProductDisplayName(cake);
+
+  return {
+    title: `${displayName} | Wasana Bakers Kandy`,
+    description: cake.shortDescription || cake.description.substring(0, 160),
+  };
+}
+
+export default async function CakeDetailPage({ params }: PageProps) {
+  const { slug } = await params;
+  const cake = await ProductService.getProductBySlug(slug);
+
+  if (!cake) {
+    notFound();
+  }
+
+  // Map database entity to serializable client props
+  const serializedCake = {
+    id: cake.id,
+    name: cake.name,
+    slug: cake.slug,
+    catalogueCode: cake.catalogueCode,
+    mainCategory: cake.mainCategory,
+    collectionCode: cake.collectionCode,
+    designNumber: cake.designNumber,
+    isSeasonal: cake.isSeasonal,
+    description: cake.description,
+    shortDescription: cake.shortDescription,
+    basePrice: cake.basePrice.toString(),
+    images: cake.images.map((img) => ({
+      id: img.id,
+      url: img.url,
+      altText: img.altText,
+      isPrimary: img.isPrimary,
+      sortOrder: img.sortOrder,
+    })),
+    customizationGroups: cake.customizationGroups.map((group) => ({
+      id: group.id,
+      name: group.name,
+      fieldType: group.fieldType,
+      isRequired: group.isRequired,
+      sortOrder: group.sortOrder,
+      isActive: group.isActive,
+      helperText: group.helperText,
+      maxCharacters: group.maxCharacters,
+      options: group.options.map((opt) => ({
+        id: opt.id,
+        label: opt.label,
+        priceAdjustment: opt.priceAdjustment.toString(),
+        sortOrder: opt.sortOrder,
+        isActive: opt.isActive,
+      })),
+    })),
+  };
+
+  return (
+    <div className="bg-stone-50 min-h-screen pb-20">
+      {/* Progress Bar */}
+      <div className="bg-white border-b border-stone-200">
+        <CustomerProgressBar currentStep={1} />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        {/* Back Link */}
+        <div className="mb-6">
+          <Link
+            href="/cakes"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-600 hover:text-amber-700 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to All Cakes</span>
+          </Link>
+        </div>
+
+        {/* Customizer */}
+        <CakeCustomizer product={serializedCake} />
+      </div>
+    </div>
+  );
+}
