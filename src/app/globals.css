@@ -1,14 +1,210 @@
 @import "tailwindcss";
 
-:root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
+/* ============================================================
+   WASANA BAKERS — Design Token System  v2
+   Reference: Dakingo-style warm editorial bakery
+   Primary  #3D2B24 · Secondary #C88A58 · Tertiary #A3B19B · Neutral #FAF7F2
+   ============================================================ */
+
+@theme {
+  /* ---------- Colours ---------- */
+  --color-wb-bg:            #FAF7F2;   /* warm neutral page bg */
+  --color-wb-bg-alt:        #F4F0EA;   /* slightly darker bg for sections */
+  --color-wb-surface:       #FFFFFF;
+  --color-wb-surface-warm:  #F7F3EE;   /* card warm tint */
+
+  --color-wb-primary:       #3D2B24;   /* deep chocolate */
+  --color-wb-primary-hover: #2A1E19;
+  --color-wb-primary-light: #F0EAE7;   /* very light tint */
+
+  --color-wb-secondary:     #C88A58;   /* caramel amber CTA */
+  --color-wb-secondary-hover: #B07240;
+  --color-wb-secondary-light: #F7EBE0;
+
+  --color-wb-tertiary:      #A3B19B;   /* sage green accent */
+  --color-wb-tertiary-light: #EBF0E9;
+
+  --color-wb-choc:          #3D2B24;   /* alias for headings */
+  --color-wb-muted:         #8A7568;   /* muted body text */
+  --color-wb-subtle:        #BDB0A7;   /* very muted / placeholder */
+  --color-wb-border:        #E8E0D8;   /* subtle warm border */
+  --color-wb-border-dark:   #D4C8BC;
+
+  --color-wb-success:       #3F6B4B;
+  --color-wb-success-bg:    #EEF5F0;
+  --color-wb-error:         #9B2335;
+  --color-wb-error-bg:      #FBF0F2;
+
+  /* Badge colours (card labels) */
+  --color-wb-badge-spring:   #A3B19B;   /* sage */
+  --color-wb-badge-best:     #C88A58;   /* amber */
+  --color-wb-badge-fav:      #3D2B24;   /* dark */
+  --color-wb-badge-sameday:  #4A7C59;   /* green */
+
+  /* ---------- Fonts ---------- */
+  --font-serif:   var(--font-playfair), Georgia, serif;
+  --font-jakarta: var(--font-jakarta), system-ui, sans-serif;
+  --font-script:  var(--font-dancing), cursive;
+  /* Legacy alias */
+  --font-body:    var(--font-jakarta), system-ui, sans-serif;
+
+  /* ---------- Border Radius ---------- */
+  --radius-pill:    9999px;
+  --radius-card:    0.75rem;    /* 12px — editorial, not bubbly */
+  --radius-card-lg: 1rem;       /* 16px */
+  --radius-card-xl: 1.25rem;    /* 20px */
+
+  /* ---------- Shadows ---------- */
+  --shadow-card:    0 1px 3px 0 rgb(61 43 36 / 0.07), 0 4px 12px -2px rgb(61 43 36 / 0.06);
+  --shadow-card-hover: 0 8px 28px -4px rgb(61 43 36 / 0.14), 0 2px 8px -2px rgb(61 43 36 / 0.08);
+  --shadow-cta:     0 4px 20px 0 rgb(200 138 88 / 0.35);
+  --shadow-cta-hover: 0 6px 28px 0 rgb(200 138 88 / 0.50);
+  --shadow-dark:    0 4px 20px 0 rgb(61 43 36 / 0.25);
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  margin: 0;
-  padding: 0;
+/* ============================================================
+   BASE
+   ============================================================ */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: #FAF7F2;
+    color: #3D2B24;
+    font-family: var(--font-jakarta), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    padding: 0;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-serif);
+    color: #3D2B24;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  h4, h5, h6, p, span, button, label, input {
+    font-family: var(--font-jakarta), system-ui, sans-serif;
+  }
 }
+
+/* ============================================================
+   FOCUS
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid #C88A58;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.animate-fade-in    { animation: fadeIn  0.35s ease both; }
+.animate-slide-up   { animation: slideUp 0.45s ease both; }
+.animate-scale-in   { animation: scaleIn 0.25s ease both; }
+.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+.animate-children > *:nth-child(1) { animation-delay: 0ms; }
+.animate-children > *:nth-child(2) { animation-delay: 60ms; }
+.animate-children > *:nth-child(3) { animation-delay: 120ms; }
+.animate-children > *:nth-child(4) { animation-delay: 180ms; }
+.animate-children > *:nth-child(5) { animation-delay: 240ms; }
+.animate-children > *:nth-child(6) { animation-delay: 300ms; }
+.animate-children > *:nth-child(7) { animation-delay: 360ms; }
+.animate-children > *:nth-child(8) { animation-delay: 420ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   SKELETON
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(90deg, #EDE7DF 25%, #F7F3EE 50%, #EDE7DF 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* ============================================================
+   SHADOWS
+   ============================================================ */
+.shadow-card       { box-shadow: var(--shadow-card); }
+.shadow-card-hover { box-shadow: var(--shadow-card-hover); }
+.shadow-cta        { box-shadow: var(--shadow-cta); }
+.shadow-dark       { box-shadow: var(--shadow-dark); }
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #FAF7F2; }
+::-webkit-scrollbar-thumb { background: #D4C8BC; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #8A7568; }
+
+/* ============================================================
+   SELECTION
+   ============================================================ */
+::selection {
+  background: #F7EBE0;
+  color: #3D2B24;
+}
+
+/* ============================================================
+   DIVIDER
+   ============================================================ */
+.divider { border: none; border-top: 1px solid #E8E0D8; }
+
+/* ============================================================
+   CARD BASE
+   ============================================================ */
+.card-base {
+  background: #FFFFFF;
+  border: 1px solid #E8E0D8;
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ============================================================
+   GLOBAL RESETS
+   ============================================================ */
+button { cursor: pointer; font-family: inherit; }
+input, textarea, select { font-family: inherit; }
+
+/* ============================================================
+   UTILITY — hide scrollbar (for horizontal scroll rows)
+   ============================================================ */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

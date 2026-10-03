@@ -1,5 +1,7 @@
 import { ProductService } from "@/lib/services/product-service";
 import { ProductTable } from "@/components/admin/ProductTable";
+import { getAdminSession } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
 export const revalidate = 0;
 
@@ -15,6 +17,11 @@ interface AdminProductsPageProps {
 }
 
 export default async function AdminProductsPage({ searchParams }: AdminProductsPageProps) {
+  const session = await getAdminSession();
+  if (!session) {
+    redirect("/admin/login");
+  }
+
   const params = searchParams ? await searchParams : {};
   const products = await ProductService.getAdminProducts(params.search, params.collection);
 

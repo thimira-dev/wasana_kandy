@@ -2,6 +2,21 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Create the local environment file before starting the app:
+
+```bash
+copy .env.example .env
+```
+
+Set `DATABASE_URL` in `.env` to a reachable PostgreSQL or Supabase PostgreSQL database. The default value in `.env.example` expects PostgreSQL at `localhost:5432` with database `wasana_bakers`.
+
+After configuring the database, apply migrations and seed development data:
+
+```bash
+npx prisma migrate deploy
+npm run seed
+```
+
 First, run the development server:
 
 ```bash

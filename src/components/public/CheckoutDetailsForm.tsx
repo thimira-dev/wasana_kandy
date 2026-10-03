@@ -139,7 +139,7 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} method="POST" action="javascript:void(0);" className="space-y-8">
       {/* SECTION 1: Customer Contact Information */}
       <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-xs space-y-6">
         <div className="border-b border-stone-100 pb-3">
@@ -420,7 +420,8 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
       {/* Submit / Continue Button */}
       <div className="flex justify-end pt-2">
         <button
-          type="submit"
+          type="button"
+          onClick={handleSubmit}
           disabled={isSubmitting}
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-bold rounded-xl bg-amber-600 text-white hover:bg-amber-700 active:scale-98 transition-all shadow-md hover:shadow-lg focus:ring-4 focus:ring-amber-200 cursor-pointer disabled:opacity-50"
         >
