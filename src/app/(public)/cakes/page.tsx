@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { ProductService } from "@/lib/services/product-service";
 import { CakeCard } from "@/components/public/CakeCard";
@@ -65,12 +66,14 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
 
           {/* ── LEFT COLUMN: STICKY FILTER MENU (col-span-3) ── */}
           <div className="lg:col-span-3 xl:col-span-3 h-full">
-            <CatalogueFilterBar
-              currentSearch={search}
-              currentCategory={category}
-              currentCollection={collection}
-              currentSort={sort}
-            />
+            <Suspense fallback={null}>
+              <CatalogueFilterBar
+                currentSearch={search}
+                currentCategory={category}
+                currentCollection={collection}
+                currentSort={sort}
+              />
+            </Suspense>
           </div>
 
           {/* ── RIGHT COLUMN: HERO BANNER + CAKE GRID + PAGINATION (col-span-9) ── */}
