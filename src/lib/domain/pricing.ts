@@ -32,15 +32,7 @@ export function centsToDecimalString(cents: number): string {
   return `${isNegative ? "-" : ""}${whole}.${frac.toString().padStart(2, "0")}`;
 }
 
-export function formatLKR(amountInCentsOrDecimal: number | string): string {
-  let cents: number;
-  if (typeof amountInCentsOrDecimal === "number" && Number.isInteger(amountInCentsOrDecimal)) {
-    // Already in cents
-    cents = amountInCentsOrDecimal;
-  } else {
-    cents = parsePriceToCents(amountInCentsOrDecimal);
-  }
-
+export function formatLKRCents(cents: number): string {
   const isNegative = cents < 0;
   const absCents = Math.abs(cents);
   const whole = Math.floor(absCents / 100);
@@ -50,6 +42,25 @@ export function formatLKR(amountInCentsOrDecimal: number | string): string {
   const formattedFrac = frac.toString().padStart(2, "0");
 
   return `${isNegative ? "-" : ""}LKR ${formattedWhole}.${formattedFrac}`;
+}
+
+export function formatLKR(amountInCentsOrDecimal: number | string): string {
+  if (amountInCentsOrDecimal === null || amountInCentsOrDecimal === undefined) {
+    return "LKR 0.00";
+  }
+
+  // If passed an integer number >= 100000 (likely in cents from internal legacy calculation), treat as cents
+  if (
+    typeof amountInCentsOrDecimal === "number" &&
+    Number.isInteger(amountInCentsOrDecimal) &&
+    Math.abs(amountInCentsOrDecimal) >= 100000
+  ) {
+    return formatLKRCents(amountInCentsOrDecimal);
+  }
+
+  // Standard case: amount is in LKR decimal (e.g. 3500, "3500.00", 3500.50)
+  const cents = parsePriceToCents(amountInCentsOrDecimal);
+  return formatLKRCents(cents);
 }
 
 export interface OptionPriceAdjustment {
@@ -88,9 +99,9 @@ export function calculateCustomizedPrice(
     basePriceCents,
     adjustmentsCents,
     totalCents,
-    basePriceFormatted: formatLKR(basePriceCents),
-    adjustmentsFormatted: formatLKR(adjustmentsCents),
-    totalFormatted: formatLKR(totalCents),
+    basePriceFormatted: formatLKRCents(basePriceCents),
+    adjustmentsFormatted: formatLKRCents(adjustmentsCents),
+    totalFormatted: formatLKRCents(totalCents),
     totalDecimal: centsToDecimalString(totalCents),
   };
 }

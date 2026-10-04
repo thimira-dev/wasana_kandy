@@ -1,79 +1,104 @@
 @import "tailwindcss";
 
 /* ============================================================
-   WASANA BAKERS — Design Token System  v2
-   Reference: Dakingo-style warm editorial bakery
-   Primary  #3D2B24 · Secondary #C88A58 · Tertiary #A3B19B · Neutral #FAF7F2
+   WASANA BAKERS — Artisanal Confectionery Glass Design System
+   Visual Style: iOS Glassmorphism + Modern Bakery Luxury
+   Colors: Amber Gold (#F59E0B), Confection Ruby (#E11D48), Off-White Canvas (#FAF9F5), Deep Charcoal (#1B1C1A)
+   Typography: Playfair Display (Serif Display) + Plus Jakarta Sans (Interface/Prices)
    ============================================================ */
 
 @theme {
-  /* ---------- Colours ---------- */
-  --color-wb-bg:            #FAF7F2;   /* warm neutral page bg */
-  --color-wb-bg-alt:        #F4F0EA;   /* slightly darker bg for sections */
-  --color-wb-surface:       #FFFFFF;
-  --color-wb-surface-warm:  #F7F3EE;   /* card warm tint */
+  /* ---------- Colors ---------- */
+  --color-surface: #FAF9F5;
+  --color-surface-dim: #DBDAD6;
+  --color-surface-bright: #FAF9F5;
+  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-low: #F4F4F0;
+  --color-surface-container: #EFEEEA;
+  --color-surface-container-high: #E9E8E4;
+  --color-surface-container-highest: #E3E2DF;
+  --color-on-surface: #1B1C1A;
+  --color-on-surface-variant: #534434;
 
-  --color-wb-primary:       #3D2B24;   /* deep chocolate */
-  --color-wb-primary-hover: #2A1E19;
-  --color-wb-primary-light: #F0EAE7;   /* very light tint */
+  --color-primary: #F59E0B;
+  /* Warm Bakery Amber Gold */
+  --color-on-primary: #FFFFFF;
+  --color-primary-container: #F59E0B;
+  --color-on-primary-container: #613B00;
 
-  --color-wb-secondary:     #C88A58;   /* caramel amber CTA */
-  --color-wb-secondary-hover: #B07240;
-  --color-wb-secondary-light: #F7EBE0;
+  --color-secondary: #E11D48;
+  /* Confection Ruby Red */
+  --color-on-secondary: #FFFFFF;
+  --color-secondary-container: #E11D48;
+  --color-on-secondary-container: #FFFBFD;
 
-  --color-wb-tertiary:      #A3B19B;   /* sage green accent */
-  --color-wb-tertiary-light: #EBF0E9;
+  --color-tertiary: #78350F;
+  /* Roasted Cocoa Brown */
+  --color-on-tertiary: #FFFFFF;
+  --color-tertiary-container: #F79A6C;
+  --color-on-tertiary-container: #72300A;
 
-  --color-wb-choc:          #3D2B24;   /* alias for headings */
-  --color-wb-muted:         #8A7568;   /* muted body text */
-  --color-wb-subtle:        #BDB0A7;   /* very muted / placeholder */
-  --color-wb-border:        #E8E0D8;   /* subtle warm border */
-  --color-wb-border-dark:   #D4C8BC;
+  --color-background: #FAF9F5;
+  --color-on-background: #1B1C1A;
+  --color-outline: #867461;
+  --color-outline-variant: #D8C3AD;
 
-  --color-wb-success:       #3F6B4B;
-  --color-wb-success-bg:    #EEF5F0;
-  --color-wb-error:         #9B2335;
-  --color-wb-error-bg:      #FBF0F2;
-
-  /* Badge colours (card labels) */
-  --color-wb-badge-spring:   #A3B19B;   /* sage */
-  --color-wb-badge-best:     #C88A58;   /* amber */
-  --color-wb-badge-fav:      #3D2B24;   /* dark */
-  --color-wb-badge-sameday:  #4A7C59;   /* green */
+  /* Legacy compatibility aliases */
+  --color-wb-bg: #FAF9F5;
+  --color-wb-surface: #FFFFFF;
+  --color-wb-primary: #1B1C1A;
+  --color-wb-secondary: #F59E0B;
+  --color-wb-ruby: #E11D48;
+  --color-wb-muted: #534434;
+  --color-wb-border: #E9E8E4;
 
   /* ---------- Fonts ---------- */
-  --font-serif:   var(--font-playfair), Georgia, serif;
-  --font-jakarta: var(--font-jakarta), system-ui, sans-serif;
-  --font-script:  var(--font-dancing), cursive;
-  /* Legacy alias */
-  --font-body:    var(--font-jakarta), system-ui, sans-serif;
+  --font-serif: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-jakarta: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-script: var(--font-dancing), cursive;
+  --font-body: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
 
   /* ---------- Border Radius ---------- */
-  --radius-pill:    9999px;
-  --radius-card:    0.75rem;    /* 12px — editorial, not bubbly */
-  --radius-card-lg: 1rem;       /* 16px */
-  --radius-card-xl: 1.25rem;    /* 20px */
+  --radius-sm: 0.25rem;
+  /* 4px */
+  --radius-default: 0.5rem;
+  /* 8px */
+  --radius-md: 0.75rem;
+  /* 12px */
+  --radius-lg: 1.0rem;
+  /* 16px — E-commerce Cake Cards & Sheets */
+  --radius-xl: 1.5rem;
+  /* 24px — Drawers & Hero Billboards */
+  --radius-full: 9999px;
+  /* Pill Buttons & Category Chips */
 
-  /* ---------- Shadows ---------- */
-  --shadow-card:    0 1px 3px 0 rgb(61 43 36 / 0.07), 0 4px 12px -2px rgb(61 43 36 / 0.06);
-  --shadow-card-hover: 0 8px 28px -4px rgb(61 43 36 / 0.14), 0 2px 8px -2px rgb(61 43 36 / 0.08);
-  --shadow-cta:     0 4px 20px 0 rgb(200 138 88 / 0.35);
-  --shadow-cta-hover: 0 6px 28px 0 rgb(200 138 88 / 0.50);
-  --shadow-dark:    0 4px 20px 0 rgb(61 43 36 / 0.25);
+  /* ---------- Glassmorphism Shadows ---------- */
+  --shadow-glass: 0 8px 32px -4px rgba(27, 28, 26, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+  --shadow-glass-hover: 0 16px 40px -6px rgba(245, 158, 11, 0.15), 0 4px 16px -2px rgba(27, 28, 26, 0.08);
+  --shadow-glass-float: 0 20px 48px -8px rgba(27, 28, 26, 0.12), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-gold-cta: 0 4px 20px 0 rgba(245, 158, 11, 0.38);
+  --shadow-gold-hover: 0 8px 28px 0 rgba(245, 158, 11, 0.50);
 }
 
 /* ============================================================
-   BASE
+   BASE & TYPOGRAPHY
    ============================================================ */
 @layer base {
-  *, *::before, *::after { box-sizing: border-box; }
 
-  html { scroll-behavior: smooth; }
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
 
   body {
-    background-color: #FAF7F2;
-    color: #3D2B24;
-    font-family: var(--font-jakarta), system-ui, sans-serif;
+    background-color: #FAF9F5;
+    color: #1B1C1A;
+    font-family: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     margin: 0;
@@ -82,129 +107,382 @@
     line-height: 1.6;
   }
 
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     font-family: var(--font-serif);
-    color: #3D2B24;
+    color: #1B1C1A;
     line-height: 1.15;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
   }
 
-  h4, h5, h6, p, span, button, label, input {
-    font-family: var(--font-jakarta), system-ui, sans-serif;
+  h4,
+  h5,
+  h6,
+  p,
+  span,
+  button,
+  label,
+  input,
+  select {
+    font-family: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
   }
 }
 
 /* ============================================================
-   FOCUS
+   TYPOGRAPHY SPECIFICATION UTILITIES
+   ============================================================ */
+.text-display-hero {
+  font-family: var(--font-serif);
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 64px;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 768px) {
+  .text-display-hero {
+    font-size: 36px;
+    line-height: 44px;
+    letter-spacing: -0.01em;
+  }
+}
+
+.text-headline-xl {
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 48px;
+  letter-spacing: -0.015em;
+}
+
+@media (max-width: 768px) {
+  .text-headline-xl {
+    font-size: 28px;
+    line-height: 36px;
+    letter-spacing: -0.01em;
+  }
+}
+
+.text-headline-lg {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+  letter-spacing: -0.01em;
+}
+
+.text-headline-sm {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: 0em;
+}
+
+.text-price-lg {
+  font-family: var(--font-jakarta);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 28px;
+  letter-spacing: -0.02em;
+}
+
+.text-price-md {
+  font-family: var(--font-jakarta);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+}
+
+.text-label-caps {
+  font-family: var(--font-jakarta);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   GLASSMORPHISM SYSTEM UTILITIES
+   ============================================================ */
+
+/* Layer 1: Glass Card Substrate */
+.glass-card {
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(27, 28, 26, 0.07);
+  box-shadow: 0 8px 32px -4px rgba(27, 28, 26, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.85);
+  border-radius: 1rem;
+  /* 16px */
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.90);
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 16px 40px -6px rgba(245, 158, 11, 0.12), 0 4px 16px -2px rgba(27, 28, 26, 0.06), inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+  transform: translateY(-2px);
+}
+
+/* Layer 2: Floating Sheets, Drawers & Modals */
+.glass-floating {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(27, 28, 26, 0.09);
+  box-shadow: 0 20px 48px -8px rgba(27, 28, 26, 0.14), 0 1px 2px rgba(0, 0, 0, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+  border-radius: 1.5rem;
+  /* 24px */
+}
+
+/* Layer 3: Sticky Glass Header Nav */
+.glass-nav {
+  background: rgba(250, 249, 245, 0.82);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(27, 28, 26, 0.08);
+  box-shadow: 0 4px 24px -2px rgba(27, 28, 26, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Glass Pill Chip */
+.glass-pill {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(27, 28, 26, 0.08);
+  border-radius: 9999px;
+  color: #1B1C1A;
+  transition: all 0.2s ease;
+}
+
+.glass-pill:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #F59E0B;
+  color: #1B1C1A;
+}
+
+.glass-pill-active {
+  background: #F59E0B !important;
+  color: #1B1C1A !important;
+  border-color: #F59E0B !important;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+}
+
+/* ============================================================
+   BUTTON SYSTEM
+   ============================================================ */
+/* Primary Action Button (Warm Bakery Amber Gold) */
+.btn-primary-gold {
+  background-color: #F59E0B;
+  color: #1B1C1A;
+  font-weight: 700;
+  border-radius: 9999px;
+  box-shadow: 0 4px 20px 0 rgba(245, 158, 11, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-primary-gold:hover {
+  background-color: #FBBF24;
+  box-shadow: 0 6px 28px 0 rgba(245, 158, 11, 0.50);
+  transform: scale(1.02);
+}
+
+.btn-primary-gold:active {
+  transform: scale(0.98);
+}
+
+/* Glass Secondary Button */
+.btn-glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(27, 28, 26, 0.12);
+  color: #1B1C1A;
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(27, 28, 26, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Confection Ruby Accent Button */
+.btn-ruby {
+  background: rgba(225, 29, 72, 0.10);
+  color: #E11D48;
+  font-weight: 700;
+  border-radius: 9999px;
+  border: 1px solid rgba(225, 29, 72, 0.20);
+  transition: all 0.2s ease;
+}
+
+.btn-ruby:hover {
+  background: #E11D48;
+  color: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.30);
+}
+
+/* Ruby Badge (3% Usage) */
+.badge-ruby {
+  background-color: #E11D48;
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  padding: 3px 9px;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.3);
+}
+
+/* ============================================================
+   FOCUS & ACCESSIBILITY
    ============================================================ */
 :focus-visible {
-  outline: 2px solid #C88A58;
+  outline: 2px solid #F59E0B;
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 /* ============================================================
    ANIMATIONS
    ============================================================ */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.97); }
-  to   { opacity: 1; transform: scale(1); }
-}
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
-}
-@keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.5; }
-}
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 
-.animate-fade-in    { animation: fadeIn  0.35s ease both; }
-.animate-slide-up   { animation: slideUp 0.45s ease both; }
-.animate-scale-in   { animation: scaleIn 0.25s ease both; }
-.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
-
-.animate-children > *:nth-child(1) { animation-delay: 0ms; }
-.animate-children > *:nth-child(2) { animation-delay: 60ms; }
-.animate-children > *:nth-child(3) { animation-delay: 120ms; }
-.animate-children > *:nth-child(4) { animation-delay: 180ms; }
-.animate-children > *:nth-child(5) { animation-delay: 240ms; }
-.animate-children > *:nth-child(6) { animation-delay: 300ms; }
-.animate-children > *:nth-child(7) { animation-delay: 360ms; }
-.animate-children > *:nth-child(8) { animation-delay: 420ms; }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* ============================================================
-   SKELETON
-   ============================================================ */
-.skeleton {
-  background: linear-gradient(90deg, #EDE7DF 25%, #F7F3EE 50%, #EDE7DF 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-  border-radius: 6px;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-soft {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s ease both;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.45s ease both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.25s ease both;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-children>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.animate-children>*:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.animate-children>*:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.animate-children>*:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+.animate-children>*:nth-child(5) {
+  animation-delay: 240ms;
+}
+
+.animate-children>*:nth-child(6) {
+  animation-delay: 300ms;
+}
+
+.animate-children>*:nth-child(7) {
+  animation-delay: 360ms;
+}
+
+.animate-children>*:nth-child(8) {
+  animation-delay: 420ms;
 }
 
 /* ============================================================
-   SHADOWS
+   SCROLLBAR & SELECTION
    ============================================================ */
-.shadow-card       { box-shadow: var(--shadow-card); }
-.shadow-card-hover { box-shadow: var(--shadow-card-hover); }
-.shadow-cta        { box-shadow: var(--shadow-cta); }
-.shadow-dark       { box-shadow: var(--shadow-dark); }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
 
-/* ============================================================
-   SCROLLBAR
-   ============================================================ */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #FAF7F2; }
-::-webkit-scrollbar-thumb { background: #D4C8BC; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #8A7568; }
+::-webkit-scrollbar-track {
+  background: #FAF9F5;
+}
 
-/* ============================================================
-   SELECTION
-   ============================================================ */
+::-webkit-scrollbar-thumb {
+  background: #D8C3AD;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #F59E0B;
+}
+
 ::selection {
-  background: #F7EBE0;
-  color: #3D2B24;
+  background: rgba(245, 158, 11, 0.25);
+  color: #1B1C1A;
 }
 
-/* ============================================================
-   DIVIDER
-   ============================================================ */
-.divider { border: none; border-top: 1px solid #E8E0D8; }
-
-/* ============================================================
-   CARD BASE
-   ============================================================ */
-.card-base {
-  background: #FFFFFF;
-  border: 1px solid #E8E0D8;
-  border-radius: 12px;
-  box-shadow: var(--shadow-card);
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
-/* ============================================================
-   GLOBAL RESETS
-   ============================================================ */
-button { cursor: pointer; font-family: inherit; }
-input, textarea, select { font-family: inherit; }
-
-/* ============================================================
-   UTILITY — hide scrollbar (for horizontal scroll rows)
-   ============================================================ */
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
