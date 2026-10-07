@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Heart, Plus, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Heart, ShoppingBag } from "lucide-react";
 import { formatLKR } from "@/lib/domain/pricing";
 import { getProductDisplayName } from "@/lib/domain/catalogue";
 import { CakeImage } from "@/components/public/CakeImage";
-import { useCart } from "@/context/CartContext";
 
 export interface CakeCardProps {
   id: string;
@@ -57,8 +57,7 @@ export function CakeCard({
   mainCategory,
   isSeasonal,
 }: CakeCardProps) {
-  const { addToCart } = useCart();
-  const [added, setAdded] = useState(false);
+  const router = useRouter();
   const [isSaved, setIsSaved] = useState(false);
 
   const displayName = getProductDisplayName({ name, catalogueCode });
@@ -66,25 +65,32 @@ export function CakeCard({
 
   const numPrice = typeof basePrice === "number" ? basePrice : parseFloat(basePrice) || 0;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleBuy = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    addToCart({
+    const orderPayload = {
       productId: id,
-      name,
-      slug,
-      catalogueCode,
-      mainCategory,
+      productName: name,
+      productSlug: slug,
+      productImage: imageUrl || "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800",
       basePrice: numPrice,
-      price: numPrice,
-      imageUrl: imageUrl || undefined,
-    });
+      totalPriceFormatted: formatLKR(numPrice),
+      totalCents: Math.round(numPrice * 100),
+      selections: {},
+      customizationSummary: [],
+      timestamp: Date.now(),
+    };
 
-    setAdded(true);
-    setTimeout(() => {
-      setAdded(false);
-    }, 1600);
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("wasana_pending_order", JSON.stringify(orderPayload));
+      } catch (err) {
+        console.error("Failed to set order payload in sessionStorage:", err);
+      }
+    }
+
+    router.push("/checkout/details");
   };
 
   return (
@@ -158,28 +164,16 @@ export function CakeCard({
           )}
         </div>
 
-        {/* Quick Add CTA Row */}
+        {/* Quick Buy CTA Row */}
         <div className="flex items-center gap-2 mt-2">
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            className={`flex-1 inline-flex items-center justify-center gap-1 py-2 text-[12px] font-bold transition-all rounded-full ${
-              added
-                ? "bg-[#10B981] text-white shadow-xs"
-                : "btn-primary-gold"
-            }`}
-            aria-label={`Add ${displayName} to cart`}
+          <Link
+            href={`/cakes/${slug}`}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 text-[12px] font-bold btn-primary-gold rounded-full transition-all"
+            aria-label={`Order ${displayName}`}
           >
-            {added ? (
-              <>
-                <Check className="w-3.5 h-3.5" /> Added
-              </>
-            ) : (
-              <>
-                <Plus className="w-3.5 h-3.5" /> Add
-              </>
-            )}
-          </button>
+            <ShoppingBag className="w-3.5 h-3.5" aria-hidden="true" />
+            Buy
+          </Link>
 
           <Link
             href={`/cakes/${slug}`}

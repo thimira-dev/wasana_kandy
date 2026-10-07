@@ -118,6 +118,55 @@ export class ProductService {
   }
 
   /**
+   * Fetches published related cakes from the same category or general catalogue (excluding current product ID)
+   */
+  static async getRelatedProducts(productId: string, mainCategory?: string | null, limit: number = 4) {
+    const where: Prisma.ProductWhereInput = {
+      published: true,
+      isActive: true,
+      NOT: { id: productId },
+    };
+
+    if (mainCategory && mainCategory.trim().length > 0) {
+      where.mainCategory = mainCategory.trim();
+    }
+
+    let products = await prisma.product.findMany({
+      where,
+      include: {
+        images: {
+          orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+        },
+      },
+      take: limit,
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (products.length < limit) {
+      const fallbackProducts = await prisma.product.findMany({
+        where: {
+          published: true,
+          isActive: true,
+          NOT: {
+            id: { in: [productId, ...products.map((p) => p.id)] },
+          },
+        },
+        include: {
+          images: {
+            orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+          },
+        },
+        take: limit - products.length,
+        orderBy: { createdAt: "desc" },
+      });
+
+      products = [...products, ...fallbackProducts];
+    }
+
+    return products;
+  }
+
+  /**
    * Fetches products for admin management table with optional search and collection filter
    */
   static async getAdminProducts(search?: string, collection?: string) {

@@ -7,7 +7,6 @@ import { formatLKR, calculateCustomizedPrice } from "@/lib/domain/pricing";
 import { validateCustomerSelections, CustomerCustomizationSelections } from "@/lib/domain/validation";
 import { getProductDisplayName } from "@/lib/domain/catalogue";
 import { CakeImage } from "@/components/public/CakeImage";
-import { useCart } from "@/context/CartContext";
 import { CheckCircle2, AlertCircle, ArrowRight, Sparkles, Sliders } from "lucide-react";
 
 export interface CustomizationOptionData {
@@ -57,7 +56,6 @@ export interface CakeCustomizerProps {
 }
 
 export function CakeCustomizer({ product }: CakeCustomizerProps) {
-  const { addToCart } = useCart();
   const displayName = getProductDisplayName(product);
 
   const primaryImg = product.images.find((img) => img.isPrimary) || product.images[0];
@@ -162,9 +160,17 @@ export function CakeCustomizer({ product }: CakeCustomizerProps) {
       setOrderPrepared(false);
 
       const firstErrorKey = Object.keys(validation.errors)[0];
-      const errorElement = document.getElementById(`group-${firstErrorKey}`);
-      if (errorElement) {
-        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (firstErrorKey) {
+        setTimeout(() => {
+          const errorElement = document.getElementById(`group-${firstErrorKey}`);
+          if (errorElement) {
+            errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+            const inputEl = errorElement.querySelector("input, textarea, button") as HTMLElement | null;
+            if (inputEl && "focus" in inputEl) {
+              inputEl.focus({ preventScroll: true });
+            }
+          }
+        }, 50);
       }
       return;
     }
@@ -199,21 +205,6 @@ export function CakeCustomizer({ product }: CakeCustomizerProps) {
     }
 
     const numBasePrice = typeof product.basePrice === "number" ? product.basePrice : parseFloat(product.basePrice) || 0;
-    const finalPrice = priceCalculation.totalCents / 100;
-
-    addToCart({
-      productId: product.id,
-      name: product.name,
-      slug: product.slug,
-      catalogueCode: product.catalogueCode,
-      mainCategory: product.mainCategory,
-      basePrice: numBasePrice,
-      price: finalPrice,
-      imageUrl: primaryImg?.url || undefined,
-      customizationSummary,
-      selections,
-    });
-
     const orderPayload = {
       productId: product.id,
       productName: product.name,
@@ -346,26 +337,28 @@ export function CakeCustomizer({ product }: CakeCustomizerProps) {
                   <fieldset
                     key={group.id}
                     id={`group-${group.id}`}
-                    className={`p-4 rounded-2xl transition-colors ${
-                      error ? "border border-[#E11D48] bg-[#E11D48]/5" : "glass-floating"
+                    className={`p-4 sm:p-5 rounded-2xl scroll-mt-24 transition-all ${
+                      error ? "border-2 border-[#E11D48] bg-[#E11D48]/10 ring-4 ring-[#E11D48]/25 shadow-md shadow-rose-500/10" : "glass-card"
                     }`}
                   >
-                    <legend className="px-2 text-sm font-bold text-[#1B1C1A] flex items-center gap-1.5">
-                      <span>{group.name}</span>
-                      {group.isRequired ? (
-                        <span className="text-[#E11D48] text-xs font-bold">(Required)</span>
-                      ) : (
-                        <span className="text-[#867461] text-xs font-normal">(Optional)</span>
-                      )}
-                    </legend>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm sm:text-base font-bold text-[#1B1C1A]">{group.name}</span>
+                        {group.isRequired ? (
+                          <span className="text-[#E11D48] text-xs font-bold bg-[#E11D48]/10 px-2 py-0.5 rounded-full">(Required)</span>
+                        ) : (
+                          <span className="text-[#867461] text-xs font-normal bg-stone-100 px-2 py-0.5 rounded-full">(Optional)</span>
+                        )}
+                      </div>
+                    </div>
 
                     {group.helperText && (
-                      <p className="text-xs text-[#534434] mb-3 px-1">{group.helperText}</p>
+                      <p className="text-xs text-[#534434] mb-3.5 leading-relaxed">{group.helperText}</p>
                     )}
 
                     {/* SINGLE_SELECT */}
                     {group.fieldType === "SINGLE_SELECT" && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                         {group.options.map((option) => {
                           const isSelected = selections[group.id]?.optionId === option.id;
                           const adjNum = Number(option.priceAdjustment);
@@ -374,13 +367,13 @@ export function CakeCustomizer({ product }: CakeCustomizerProps) {
                           return (
                             <label
                               key={option.id}
-                              className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer text-sm transition-all ${
+                              className={`flex items-center justify-between gap-3 p-3.5 rounded-xl border cursor-pointer text-sm transition-all ${
                                 isSelected
-                                  ? "border-[#F59E0B] bg-[#F59E0B]/15 text-[#1B1C1A] font-bold shadow-xs"
-                                  : "border-[#E9E8E4] bg-white/70 text-[#1B1C1A] hover:border-[#F59E0B]/50"
+                                  ? "border-[#F59E0B] bg-[#F59E0B]/15 text-[#1B1C1A] font-bold shadow-xs ring-1 ring-[#F59E0B]/50"
+                                  : "border-[#E9E8E4] bg-white/80 text-[#1B1C1A] hover:border-[#F59E0B]/50 hover:bg-white"
                               }`}
                             >
-                              <div className="flex items-center gap-2.5">
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                 <input
                                   type="radio"
                                   name={`group_${group.id}`}
@@ -388,13 +381,13 @@ export function CakeCustomizer({ product }: CakeCustomizerProps) {
                                   checked={isSelected}
                                   onChange={() => handleSingleSelect(group.id, option.id)}
                                   suppressHydrationWarning
-                                  className="w-4 h-4 text-[#F59E0B] border-[#D8C3AD] focus:ring-[#F59E0B]"
+                                  className="w-4 h-4 shrink-0 text-[#F59E0B] border-[#D8C3AD] focus:ring-[#F59E0B]"
                                 />
-                                <span>{option.label}</span>
+                                <span className="font-semibold text-[#1B1C1A] leading-snug">{option.label}</span>
                               </div>
 
                               {hasAdjustment && (
-                                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/80 text-[#855300]">
+                                <span className="shrink-0 text-xs font-bold px-2.5 py-1 rounded-full bg-[#F59E0B]/10 text-[#855300] border border-[#F59E0B]/20 whitespace-nowrap ml-auto">
                                   {adjNum > 0 ? `+ ${formatLKR(option.priceAdjustment)}` : formatLKR(option.priceAdjustment)}
                                 </span>
                               )}

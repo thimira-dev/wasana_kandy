@@ -13,10 +13,9 @@ import {
   ChevronDown,
   LogIn,
   ChevronRight,
-  ShoppingBag,
+  Menu,
 } from "lucide-react";
 import { MAIN_CATEGORIES } from "@/lib/domain/catalogue";
-import { useCart } from "@/context/CartContext";
 
 const BRANCHES = [
   { id: "main", name: "Kandy City Centre (Dalada Veediya)", area: "Kandy City" },
@@ -30,14 +29,13 @@ export function Navbar() {
   const searchParams  = useSearchParams();
   const [, startTx]  = useTransition();
 
-  const { totalItems, openCart } = useCart();
-
-  const [scrolled,      setScrolled]      = useState(false);
-  const [searchOpen,    setSearchOpen]    = useState(false);
-  const [searchVal,     setSearchVal]     = useState(searchParams.get("search") || "");
-  const [catOpen,       setCatOpen]       = useState(false);
-  const [branchOpen,    setBranchOpen]    = useState(false);
-  const [activeBranch,  setActiveBranch]  = useState(BRANCHES[0]);
+  const [scrolled,        setScrolled]        = useState(false);
+  const [searchOpen,      setSearchOpen]      = useState(false);
+  const [searchVal,       setSearchVal]       = useState(searchParams.get("search") || "");
+  const [catOpen,         setCatOpen]         = useState(false);
+  const [branchOpen,      setBranchOpen]      = useState(false);
+  const [mobileMenuOpen,  setMobileMenuOpen]  = useState(false);
+  const [activeBranch,    setActiveBranch]    = useState(BRANCHES[0]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 2);
@@ -49,6 +47,7 @@ export function Navbar() {
     setSearchOpen(false);
     setCatOpen(false);
     setBranchOpen(false);
+    setMobileMenuOpen(false);
   }, [pathname]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -61,6 +60,7 @@ export function Navbar() {
   const handleCategoryClick = (cat: string) => {
     startTx(() => router.push(`/cakes?category=${encodeURIComponent(cat)}`));
     setCatOpen(false);
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -68,25 +68,27 @@ export function Navbar() {
       {/* ══════════════════════════════════════════════════
           TIER 1 — Announcement / Info Bar (Deep Charcoal + Warm Amber Accent)
           ══════════════════════════════════════════════════ */}
-      <div className="bg-[#111111] text-[#E3E2DF] text-[12px] hidden sm:block border-b border-white/10">
+      <div className="bg-gradient-to-r from-[#111111] via-[#2D1F0D] to-[#111111] text-[#E3E2DF] text-[12px] hidden sm:block border-b border-[#F59E0B]/20 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between gap-4">
           {/* Left: promo text */}
-          <p className="font-medium truncate flex items-center gap-1.5">
+          <p className="font-medium truncate flex items-center gap-2">
             <span className="text-base">🎂</span>
             <span>Artisanal Celebration Cakes — Handcrafted in Kandy.</span>
-            <span className="text-[#F59E0B] font-bold">4-Day Advance Order</span>
+            <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-[#F59E0B] to-[#FBBF24] text-[#1B1C1A] font-extrabold text-[10px] tracking-wide shadow-xs">
+              4-Day Advance Order
+            </span>
           </p>
 
           {/* Right: phone + hours */}
           <div className="flex items-center gap-5 shrink-0">
             <a
               href="tel:+94812234567"
-              className="flex items-center gap-1.5 hover:text-[#F59E0B] transition-colors"
+              className="flex items-center gap-1.5 text-[#FBBF24] hover:text-[#F59E0B] font-semibold transition-colors"
             >
               <Phone className="w-3 h-3 text-[#F59E0B]" aria-hidden="true" />
               +94 81 223 4567
             </a>
-            <span className="flex items-center gap-1.5 text-stone-400">
+            <span className="flex items-center gap-1.5 text-stone-300">
               <Clock className="w-3 h-3 text-[#F59E0B]" aria-hidden="true" />
               Daily: 7:00 AM – 8:00 PM
             </span>
@@ -99,8 +101,8 @@ export function Navbar() {
           ══════════════════════════════════════════════════ */}
       <header
         className={[
-          "sticky top-0 z-50 w-full transition-all duration-200 glass-nav",
-          scrolled ? "shadow-[0_8px_30px_rgb(27_28_26_/_0.08)]" : "",
+          "sticky top-0 z-50 w-full transition-all duration-200 glass-nav bg-gradient-to-r from-[#FAF9F5]/90 via-[#FFF9ED]/95 to-[#FAF9F5]/90",
+          scrolled ? "shadow-[0_8px_30px_rgb(245_158_11_/_0.12)] border-b border-[#F59E0B]/30" : "",
         ].join(" ")}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -112,7 +114,7 @@ export function Navbar() {
               className="flex items-center gap-3 shrink-0 group mr-2"
               aria-label="Wasana Bakers — Home"
             >
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 overflow-hidden rounded-2xl border border-white/15 group-hover:scale-105 transition-transform duration-200">
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 overflow-hidden rounded-2xl border border-[#F59E0B]/30 bg-gradient-to-br from-amber-50 to-orange-50/50 group-hover:scale-105 group-hover:border-[#F59E0B] transition-all duration-200 shadow-xs">
                 <Image
                   src="/branding/wasana-logo.png"
                   alt="Wasana Bakers Logo"
@@ -123,10 +125,10 @@ export function Navbar() {
                 />
               </div>
               <div className="leading-tight">
-                <span className="font-serif text-[17px] sm:text-[19px] font-bold text-[#1B1C1A] block tracking-tight leading-none group-hover:text-[#F59E0B] transition-colors">
+                <span className="font-serif text-[17px] sm:text-[19px] font-bold text-[#1B1C1A] block tracking-tight leading-none group-hover:text-[#D97706] transition-colors">
                   Wasana Bakers
                 </span>
-                <span className="text-[9.5px] font-bold tracking-[0.16em] uppercase text-[#855300] block mt-1">
+                <span className="text-[9.5px] font-bold tracking-[0.16em] uppercase bg-gradient-to-r from-[#855300] to-[#D97706] bg-clip-text text-transparent block mt-1">
                   Artisanal Confectionery
                 </span>
               </div>
@@ -243,74 +245,78 @@ export function Navbar() {
               )}
             </div>
 
-            {/* ── RIGHT: SEARCH & SIGN IN ── */}
+            {/* ── RIGHT: SEARCH, STAFF SIGN IN & MOBILE TOGGLE ── */}
             <div className="flex items-center gap-2 shrink-0">
 
               {!searchOpen ? (
                 <button
                   type="button"
-                  onClick={() => { setSearchOpen(true); setBranchOpen(false); setCatOpen(false); }}
+                  onClick={() => { setSearchOpen(true); setBranchOpen(false); setCatOpen(false); setMobileMenuOpen(false); }}
                   className="p-2.5 rounded-full text-[#1B1C1A] hover:bg-white/80 glass-pill transition-colors"
                   aria-label="Open search"
                 >
                   <Search className="w-4 h-4" aria-hidden="true" />
                 </button>
               ) : (
-                <form onSubmit={handleSearch} className="flex items-center gap-1" role="search">
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#855300]">
-                      <Search className="w-4 h-4" aria-hidden="true" />
-                    </span>
-                    <input
-                      autoFocus
-                      type="search"
-                      value={searchVal}
-                      onChange={(e) => setSearchVal(e.target.value)}
-                      placeholder="Search cakes or catalogue code…"
-                      aria-label="Search cakes"
-                      className="w-48 sm:w-64 pl-9 pr-3 py-1.5 text-[13px] bg-white/90 backdrop-blur-md border border-[#F59E0B] rounded-full text-[#1B1C1A] placeholder:text-[#867461] focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/40 transition-all"
-                    />
-                  </div>
+                <>
+                  <form onSubmit={handleSearch} className="hidden sm:flex items-center gap-1" role="search">
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#855300]">
+                        <Search className="w-4 h-4" aria-hidden="true" />
+                      </span>
+                      <input
+                        autoFocus
+                        type="search"
+                        value={searchVal}
+                        onChange={(e) => setSearchVal(e.target.value)}
+                        placeholder="Search cakes or catalogue code…"
+                        aria-label="Search cakes"
+                        className="w-48 sm:w-64 pl-9 pr-3 py-1.5 text-[13px] bg-white/90 backdrop-blur-md border border-[#F59E0B] rounded-full text-[#1B1C1A] placeholder:text-[#867461] focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/40 transition-all"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSearchOpen(false)}
+                      className="p-2 rounded-full text-[#534434] hover:bg-white/80 transition-colors"
+                      aria-label="Close search"
+                    >
+                      <X className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  </form>
                   <button
                     type="button"
                     onClick={() => setSearchOpen(false)}
-                    className="p-2 rounded-full text-[#534434] hover:bg-white/80 transition-colors"
+                    className="sm:hidden p-2.5 rounded-full text-[#1B1C1A] hover:bg-white/80 glass-pill transition-colors"
                     aria-label="Close search"
                   >
                     <X className="w-4 h-4" aria-hidden="true" />
                   </button>
-                </form>
+                </>
               )}
 
-              {/* Shopping Bag / Cart Drawer Button (Desktop only, mobile uses bottom tab bar) */}
+              {/* Mobile Hamburger Toggle Button */}
               <button
                 type="button"
-                onClick={openCart}
-                className="hidden sm:flex relative p-2.5 rounded-full text-[#1B1C1A] hover:bg-white/80 glass-pill transition-colors items-center justify-center"
-                aria-label="Open shopping cart"
+                onClick={() => {
+                  setMobileMenuOpen((p) => !p);
+                  setSearchOpen(false);
+                  setBranchOpen(false);
+                  setCatOpen(false);
+                }}
+                className="lg:hidden p-2.5 rounded-full text-[#1B1C1A] hover:bg-white/80 glass-pill transition-colors flex items-center justify-center"
+                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={mobileMenuOpen}
               >
-                <ShoppingBag className="w-4 h-4 text-[#1B1C1A]" aria-hidden="true" />
-                {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F59E0B] text-[#1B1C1A] text-[10px] font-extrabold flex items-center justify-center shadow-xs border border-white">
-                    {totalItems}
-                  </span>
+                {mobileMenuOpen ? (
+                  <X className="w-5 h-5 text-[#1B1C1A]" aria-hidden="true" />
+                ) : (
+                  <Menu className="w-5 h-5 text-[#1B1C1A]" aria-hidden="true" />
                 )}
               </button>
-
-              {/* Staff Sign In */}
-              <Link
-                href="/admin"
-                id="nav-sign-in"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-[12px] font-bold btn-primary-gold"
-                aria-label="Staff portal"
-              >
-                <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
-                Staff Sign In
-              </Link>
             </div>
           </div>
 
-          {/* ── MOBILE SEARCH ── */}
+          {/* ── MOBILE SEARCH BAR ── */}
           {searchOpen && (
             <div className="sm:hidden pb-3 animate-fade-in">
               <form onSubmit={handleSearch} role="search">
@@ -331,14 +337,86 @@ export function Navbar() {
               </form>
             </div>
           )}
+
+          {/* ── MOBILE NAVIGATION MENU DRAWER ── */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden pb-5 pt-3 px-2 space-y-4 border-t border-[#F59E0B]/25 bg-gradient-to-b from-white/95 via-[#FFFDF7]/95 to-[#FEF3C7]/40 backdrop-blur-xl animate-fade-in rounded-b-2xl shadow-lg">
+              <div className="space-y-1">
+                <Link
+                  href="/cakes"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2.5 text-xs font-bold text-[#1B1C1A] bg-gradient-to-r from-[#F59E0B] to-[#FBBF24] rounded-xl shadow-xs hover:scale-[1.01] transition-transform"
+                >
+                  <span>All Confectionery &amp; Cakes</span>
+                  <ChevronRight className="w-4 h-4 text-[#1B1C1A]" />
+                </Link>
+
+                <div className="py-2 space-y-0.5">
+                  <p className="px-3.5 text-[10px] font-extrabold uppercase tracking-wider text-[#855300] mb-1">
+                    Categories
+                  </p>
+                  {MAIN_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => handleCategoryClick(cat)}
+                      className="w-full text-left px-3.5 py-2 text-xs font-semibold text-[#1B1C1A] hover:bg-white/90 hover:text-[#D97706] rounded-xl transition-all flex items-center justify-between"
+                    >
+                      <span>{cat}</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-[#867461]" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mobile Pickup Branch Selection */}
+              <div className="pt-3 border-t border-[#F59E0B]/20">
+                <p className="px-3.5 text-[10px] font-extrabold uppercase tracking-wider text-[#855300] mb-2">
+                  Pickup Atelier
+                </p>
+                <div className="space-y-1.5 px-1">
+                  {BRANCHES.map((branch) => (
+                    <button
+                      key={branch.id}
+                      type="button"
+                      onClick={() => { setActiveBranch(branch); setMobileMenuOpen(false); }}
+                      className={`w-full text-left flex items-center gap-2.5 p-2.5 rounded-xl transition-all ${
+                        activeBranch.id === branch.id
+                          ? "bg-gradient-to-r from-[#F59E0B] to-[#FBBF24] text-[#1B1C1A] font-bold shadow-xs border border-[#F59E0B]/40"
+                          : "bg-white/80 border border-[#E9E8E4] text-[#1B1C1A]"
+                      }`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${activeBranch.id === branch.id ? "bg-[#1B1C1A]" : "bg-[#D8C3AD]"}`} aria-hidden="true" />
+                      <div>
+                        <p className="text-xs font-bold leading-tight">{branch.name}</p>
+                        <p className="text-[10px] opacity-80">{branch.area}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Staff Portal Link */}
+              <div className="pt-3 border-t border-[#F59E0B]/20">
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 text-xs font-bold btn-primary-gold rounded-full shadow-md"
+                >
+                  <LogIn className="w-4 h-4" aria-hidden="true" />
+                  Staff Sign In
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Backdrop */}
-      {(catOpen || branchOpen) && (
+      {(catOpen || branchOpen || mobileMenuOpen) && (
         <div
           className="fixed inset-0 z-40 bg-black/10 backdrop-blur-xs"
-          onClick={() => { setCatOpen(false); setBranchOpen(false); }}
+          onClick={() => { setCatOpen(false); setBranchOpen(false); setMobileMenuOpen(false); }}
           aria-hidden="true"
         />
       )}

@@ -108,8 +108,30 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
       errs.readyDate = dateCheck.error || "Please select a valid ready date.";
     }
 
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+
+      const fieldOrder = ["customerName", "customerEmail", "phonePrimary", "phoneSecondary", "branchId", "readyDate"];
+      const firstErrorField = fieldOrder.find((key) => errs[key]);
+
+      if (firstErrorField) {
+        setTimeout(() => {
+          const el = document.getElementById(`field-${firstErrorField}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            const inputEl = el.querySelector("input, select, textarea") as HTMLElement | null;
+            if (inputEl && "focus" in inputEl) {
+              inputEl.focus({ preventScroll: true });
+            }
+          }
+        }, 50);
+      }
+
+      return false;
+    }
+
+    setErrors({});
+    return true;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -154,13 +176,13 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* Full Name */}
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-2 scroll-mt-24" id="field-customerName">
             <label className="block text-xs font-bold text-stone-700 mb-1">
-              Full Name <span className="text-amber-700">*</span>
+              Full Name <span className="text-rose-600">*</span>
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
-                <User className="w-4 h-4" />
+                <User className={`w-4 h-4 ${errors.customerName ? "text-rose-500" : ""}`} />
               </span>
               <input
                 type="text"
@@ -171,29 +193,29 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
                   if (errors.customerName) setErrors((prev) => ({ ...prev, customerName: "" }));
                 }}
                 placeholder="e.g. Kasun Perera"
-                className={`w-full pl-9 pr-3.5 py-2.5 text-sm bg-white border rounded-lg focus:ring-2 focus:outline-hidden transition-all ${
+                className={`w-full pl-9 pr-3.5 py-2.5 text-sm rounded-xl transition-all outline-hidden ${
                   errors.customerName
-                    ? "border-rose-400 focus:ring-rose-200"
-                    : "border-stone-300 focus:border-amber-600 focus:ring-amber-100"
+                    ? "border-2 border-rose-500 bg-rose-50/50 text-stone-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20 shadow-xs"
+                    : "bg-white border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-100"
                 }`}
               />
             </div>
             {errors.customerName && (
-              <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" />
+              <p className="text-xs font-bold text-rose-600 mt-1.5 flex items-center gap-1 animate-fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errors.customerName}</span>
               </p>
             )}
           </div>
 
           {/* Email Address */}
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-2 scroll-mt-24" id="field-customerEmail">
             <label className="block text-xs font-bold text-stone-700 mb-1">
-              Email Address <span className="text-amber-700">*</span>
+              Email Address <span className="text-rose-600">*</span>
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
-                <Mail className="w-4 h-4" />
+                <Mail className={`w-4 h-4 ${errors.customerEmail ? "text-rose-500" : ""}`} />
               </span>
               <input
                 type="email"
@@ -204,16 +226,16 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
                   if (errors.customerEmail) setErrors((prev) => ({ ...prev, customerEmail: "" }));
                 }}
                 placeholder="e.g. kasun@example.com"
-                className={`w-full pl-9 pr-3.5 py-2.5 text-sm bg-white border rounded-lg focus:ring-2 focus:outline-hidden transition-all ${
+                className={`w-full pl-9 pr-3.5 py-2.5 text-sm rounded-xl transition-all outline-hidden ${
                   errors.customerEmail
-                    ? "border-rose-400 focus:ring-rose-200"
-                    : "border-stone-300 focus:border-amber-600 focus:ring-amber-100"
+                    ? "border-2 border-rose-500 bg-rose-50/50 text-stone-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20 shadow-xs"
+                    : "bg-white border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-100"
                 }`}
               />
             </div>
             {errors.customerEmail && (
-              <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" />
+              <p className="text-xs font-bold text-rose-600 mt-1.5 flex items-center gap-1 animate-fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errors.customerEmail}</span>
               </p>
             )}
@@ -223,13 +245,13 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
           </div>
 
           {/* Primary Phone */}
-          <div>
+          <div className="scroll-mt-24" id="field-phonePrimary">
             <label className="block text-xs font-bold text-stone-700 mb-1">
-              Primary Contact Number <span className="text-amber-700">*</span>
+              Primary Contact Number <span className="text-rose-600">*</span>
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
-                <Phone className="w-4 h-4" />
+                <Phone className={`w-4 h-4 ${errors.phonePrimary ? "text-rose-500" : ""}`} />
               </span>
               <input
                 type="tel"
@@ -240,16 +262,16 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
                   if (errors.phonePrimary) setErrors((prev) => ({ ...prev, phonePrimary: "" }));
                 }}
                 placeholder="077 123 4567"
-                className={`w-full pl-9 pr-3.5 py-2.5 text-sm bg-white border rounded-lg focus:ring-2 focus:outline-hidden transition-all font-mono ${
+                className={`w-full pl-9 pr-3.5 py-2.5 text-sm rounded-xl transition-all font-mono outline-hidden ${
                   errors.phonePrimary
-                    ? "border-rose-400 focus:ring-rose-200"
-                    : "border-stone-300 focus:border-amber-600 focus:ring-amber-100"
+                    ? "border-2 border-rose-500 bg-rose-50/50 text-stone-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20 shadow-xs"
+                    : "bg-white border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-100"
                 }`}
               />
             </div>
             {errors.phonePrimary && (
-              <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" />
+              <p className="text-xs font-bold text-rose-600 mt-1.5 flex items-center gap-1 animate-fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errors.phonePrimary}</span>
               </p>
             )}
@@ -259,13 +281,13 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
           </div>
 
           {/* Secondary Phone (Optional) */}
-          <div>
+          <div className="scroll-mt-24" id="field-phoneSecondary">
             <label className="block text-xs font-medium text-stone-700 mb-1">
               Secondary Contact Number <span className="text-stone-400">(Optional)</span>
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
-                <Phone className="w-4 h-4" />
+                <Phone className={`w-4 h-4 ${errors.phoneSecondary ? "text-rose-500" : ""}`} />
               </span>
               <input
                 type="tel"
@@ -275,16 +297,16 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
                   if (errors.phoneSecondary) setErrors((prev) => ({ ...prev, phoneSecondary: "" }));
                 }}
                 placeholder="081 223 4567"
-                className={`w-full pl-9 pr-3.5 py-2.5 text-sm bg-white border rounded-lg focus:ring-2 focus:outline-hidden transition-all font-mono ${
+                className={`w-full pl-9 pr-3.5 py-2.5 text-sm rounded-xl transition-all font-mono outline-hidden ${
                   errors.phoneSecondary
-                    ? "border-rose-400 focus:ring-rose-200"
-                    : "border-stone-300 focus:border-amber-600 focus:ring-amber-100"
+                    ? "border-2 border-rose-500 bg-rose-50/50 text-stone-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20 shadow-xs"
+                    : "bg-white border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-100"
                 }`}
               />
             </div>
             {errors.phoneSecondary && (
-              <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" />
+              <p className="text-xs font-bold text-rose-600 mt-1.5 flex items-center gap-1 animate-fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errors.phoneSecondary}</span>
               </p>
             )}
@@ -296,11 +318,13 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
       </div>
 
       {/* SECTION 2: Pickup Branch Selection */}
-      <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-xs space-y-6">
+      <div className={`bg-white rounded-2xl p-6 shadow-xs space-y-6 scroll-mt-24 transition-all ${
+        errors.branchId ? "border-2 border-rose-500 ring-4 ring-rose-500/15" : "border border-stone-200"
+      }`} id="field-branchId">
         <div className="border-b border-stone-100 pb-3">
           <h2 className="text-base font-bold text-stone-900 flex items-center gap-2">
             <Store className="w-4 h-4 text-amber-600" />
-            <span>Pickup Branch</span> <span className="text-amber-700">*</span>
+            <span>Pickup Branch</span> <span className="text-rose-600">*</span>
           </h2>
           <p className="text-xs text-stone-500 mt-0.5">
             Select the Wasana Bakers outlet in Kandy where you will collect your cake.
@@ -308,8 +332,8 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
         </div>
 
         {errors.branchId && (
-          <p className="text-xs text-rose-600 flex items-center gap-1">
-            <AlertCircle className="w-3.5 h-3.5" />
+          <p className="text-xs font-bold text-rose-600 flex items-center gap-1 animate-fade-in">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errors.branchId}</span>
           </p>
         )}
@@ -364,11 +388,13 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
       </div>
 
       {/* SECTION 3: Cake Ready Date */}
-      <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-xs space-y-5">
+      <div className={`bg-white rounded-2xl p-6 shadow-xs space-y-5 scroll-mt-24 transition-all ${
+        errors.readyDate ? "border-2 border-rose-500 ring-4 ring-rose-500/15" : "border border-stone-200"
+      }`} id="field-readyDate">
         <div className="border-b border-stone-100 pb-3">
           <h2 className="text-base font-bold text-stone-900 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-amber-600" />
-            <span>Cake Ready Date</span> <span className="text-amber-700">*</span>
+            <span>Cake Ready Date</span> <span className="text-rose-600">*</span>
           </h2>
           <p className="text-xs text-stone-500 mt-0.5">
             Select the date you need your cake ready for collection.
@@ -389,7 +415,7 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
 
         <div>
           <label className="block text-xs font-bold text-stone-700 mb-1">
-            Pickup Date <span className="text-amber-700">*</span>
+            Pickup Date <span className="text-rose-600">*</span>
           </label>
           <div className="relative max-w-xs">
             <input
@@ -401,16 +427,16 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
                 setReadyDate(e.target.value);
                 if (errors.readyDate) setErrors((prev) => ({ ...prev, readyDate: "" }));
               }}
-              className={`w-full px-3.5 py-2.5 text-sm bg-white border rounded-lg focus:ring-2 focus:outline-hidden transition-all ${
+              className={`w-full px-3.5 py-2.5 text-sm rounded-xl transition-all outline-hidden ${
                 errors.readyDate
-                  ? "border-rose-400 focus:ring-rose-200"
-                  : "border-stone-300 focus:border-amber-600 focus:ring-amber-100"
+                  ? "border-2 border-rose-500 bg-rose-50/50 text-stone-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20 shadow-xs"
+                  : "bg-white border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-100"
               }`}
             />
           </div>
           {errors.readyDate && (
-            <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
-              <AlertCircle className="w-3.5 h-3.5" />
+            <p className="text-xs font-bold text-rose-600 mt-1.5 flex items-center gap-1 animate-fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errors.readyDate}</span>
             </p>
           )}

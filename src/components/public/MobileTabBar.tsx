@@ -3,12 +3,10 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ShoppingBag, User } from "lucide-react";
-import { useCart } from "@/context/CartContext";
+import { Home, User } from "lucide-react";
 
 export function MobileTabBar() {
   const pathname = usePathname();
-  const { totalItems, toggleCart, isOpen } = useCart();
 
   return (
     <nav
@@ -31,30 +29,7 @@ export function MobileTabBar() {
           Home
         </Link>
 
-        {/* 2. CART TAB */}
-        <button
-          type="button"
-          onClick={toggleCart}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-colors relative ${
-            isOpen ? "text-[#F59E0B]" : "text-[#534434] hover:text-[#1B1C1A]"
-          }`}
-          aria-label={`Shopping Cart (${totalItems} items)`}
-        >
-          <div className="relative">
-            <ShoppingBag
-              className={`w-5 h-5 ${isOpen ? "text-[#F59E0B]" : "text-[#534434]/70"}`}
-              aria-hidden="true"
-            />
-            {totalItems > 0 && (
-              <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-[#F59E0B] text-[#1B1C1A] text-[9px] font-extrabold flex items-center justify-center shadow-xs border border-white">
-                {totalItems}
-              </span>
-            )}
-          </div>
-          Cart
-        </button>
-
-        {/* 3. PROFILE TAB */}
+        {/* 2. PROFILE TAB */}
         <Link
           href="/admin"
           className={`flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-colors ${

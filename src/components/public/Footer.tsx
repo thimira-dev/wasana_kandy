@@ -153,9 +153,9 @@ export function Footer() {
           <p>© {year} Wasana Bakers Kandy. All rights reserved.</p>
 
           <div className="flex items-center justify-center gap-4 text-[12px]">
-            <Link href="/admin/login" className="hover:text-[#F59E0B] transition-colors font-bold text-stone-400">
+            {/* <Link href="/admin/login" className="hover:text-[#F59E0B] transition-colors font-bold text-stone-400">
               Staff Portal
-            </Link>
+            </Link> */}
             <span>Central Highlands, Sri Lanka 🇱🇰</span>
           </div>
         </div>
