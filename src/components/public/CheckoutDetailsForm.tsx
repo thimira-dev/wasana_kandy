@@ -193,7 +193,7 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
                   if (errors.customerName) setErrors((prev) => ({ ...prev, customerName: "" }));
                 }}
                 placeholder="e.g. Kasun Perera"
-                className={`w-full pl-9 pr-3.5 py-2.5 text-sm rounded-xl transition-all outline-hidden ${
+                className={`w-full pl-9 pr-3.5 py-2.5 text-base sm:text-sm rounded-xl transition-all outline-hidden ${
                   errors.customerName
                     ? "border-2 border-rose-500 bg-rose-50/50 text-stone-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20 shadow-xs"
                     : "bg-white border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-100"
@@ -226,7 +226,7 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
                   if (errors.customerEmail) setErrors((prev) => ({ ...prev, customerEmail: "" }));
                 }}
                 placeholder="e.g. kasun@example.com"
-                className={`w-full pl-9 pr-3.5 py-2.5 text-sm rounded-xl transition-all outline-hidden ${
+                className={`w-full pl-9 pr-3.5 py-2.5 text-base sm:text-sm rounded-xl transition-all outline-hidden ${
                   errors.customerEmail
                     ? "border-2 border-rose-500 bg-rose-50/50 text-stone-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20 shadow-xs"
                     : "bg-white border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-100"
@@ -262,7 +262,7 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
                   if (errors.phonePrimary) setErrors((prev) => ({ ...prev, phonePrimary: "" }));
                 }}
                 placeholder="077 123 4567"
-                className={`w-full pl-9 pr-3.5 py-2.5 text-sm rounded-xl transition-all font-mono outline-hidden ${
+                className={`w-full pl-9 pr-3.5 py-2.5 text-base sm:text-sm rounded-xl transition-all font-mono outline-hidden ${
                   errors.phonePrimary
                     ? "border-2 border-rose-500 bg-rose-50/50 text-stone-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20 shadow-xs"
                     : "bg-white border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-100"
@@ -297,7 +297,7 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
                   if (errors.phoneSecondary) setErrors((prev) => ({ ...prev, phoneSecondary: "" }));
                 }}
                 placeholder="081 223 4567"
-                className={`w-full pl-9 pr-3.5 py-2.5 text-sm rounded-xl transition-all font-mono outline-hidden ${
+                className={`w-full pl-9 pr-3.5 py-2.5 text-base sm:text-sm rounded-xl transition-all font-mono outline-hidden ${
                   errors.phoneSecondary
                     ? "border-2 border-rose-500 bg-rose-50/50 text-stone-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20 shadow-xs"
                     : "bg-white border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-100"
@@ -427,7 +427,7 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
                 setReadyDate(e.target.value);
                 if (errors.readyDate) setErrors((prev) => ({ ...prev, readyDate: "" }));
               }}
-              className={`w-full px-3.5 py-2.5 text-sm rounded-xl transition-all outline-hidden ${
+              className={`w-full px-3.5 py-2.5 text-base sm:text-sm rounded-xl transition-all outline-hidden ${
                 errors.readyDate
                   ? "border-2 border-rose-500 bg-rose-50/50 text-stone-900 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20 shadow-xs"
                   : "bg-white border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-100"

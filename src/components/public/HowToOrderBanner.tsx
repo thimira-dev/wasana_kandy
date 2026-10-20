@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Cake, ShoppingBag, UtensilsCrossed, ArrowRight, Sparkles } from "lucide-react";
+import { Cake, ShoppingBag, UtensilsCrossed, Sparkles } from "lucide-react";
 
 export function HowToOrderBanner() {
   return (
@@ -16,10 +16,10 @@ export function HowToOrderBanner() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#C47638] via-[#B86B2F] to-[#9E5522] pointer-events-none overflow-hidden" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#F59E0B]/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 grid grid-cols-1 lg:grid-cols-12 items-center min-h-[360px]">
+        <div className="relative w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 grid grid-cols-1 lg:grid-cols-2 items-center min-h-[360px]">
           
           {/* ── 1. LEFT: 3D CAKE IMAGE BRIGHTENED & BROUGHT FORWARD ── */}
-          <div className="lg:col-span-4 relative flex items-center justify-center p-4 lg:p-0 z-30">
+          <div className="relative flex items-center justify-center p-4 lg:p-0 z-30">
             <motion.div
               initial={{ opacity: 0, y: 25 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -54,7 +54,7 @@ export function HowToOrderBanner() {
           </div>
 
           {/* ── 2. CENTER: "HOW TO ENJOY?" CONTENT & 3-STEP PROCESS ── */}
-          <div className="lg:col-span-5 p-6 sm:p-8 lg:py-10 space-y-6 text-center lg:text-left">
+          <div className="p-6 sm:p-8 lg:py-10 lg:pl-4 space-y-6 text-center lg:text-left">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/15 text-[11px] font-bold tracking-widest uppercase text-amber-100 border border-white/20">
                 <Sparkles className="w-3.5 h-3.5 text-[#F59E0B]" />
@@ -94,42 +94,6 @@ export function HowToOrderBanner() {
               </div>
             </div>
           </div>
-
-          {/* ── 3. RIGHT: FEATURED PACK & ORDER NOW (Matches Reference Card) ── */}
-          <div className="lg:col-span-3 h-full bg-[#8E4417]/60 backdrop-blur-md p-6 sm:p-8 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-white/20 text-center lg:text-left">
-            <div className="space-y-3">
-              {/* Mini Basket/Pack Graphic Container */}
-              <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center mx-auto lg:mx-0 border border-white/25 shadow-sm">
-                <span className="text-2xl" aria-hidden="true">🎂</span>
-              </div>
-
-              <p className="text-[12px] text-amber-100/90 leading-snug font-medium">
-                Ribbon Cake, Chocolate Fudge, Edible Prints, Gateaux, Cupcakes
-              </p>
-            </div>
-
-            <div className="pt-6 space-y-3">
-              <div>
-                <span className="text-[13px] font-bold text-[#F59E0B] block">$35.00 / LKR 4,800</span>
-                <h3 className="font-serif text-2xl font-bold text-white leading-tight">
-                  Signature Pack
-                </h3>
-              </div>
-
-              <Link
-                href="/cakes"
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-[13px] font-bold btn-primary-gold text-[#1B1C1A] shadow-xl hover:scale-102 transition-transform"
-              >
-                <span>Order Now</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-
-              <p className="text-[10.5px] text-amber-100/70 leading-snug">
-                Sample a selection of our best selling cakes and treats delivered fresh for your events.
-              </p>
-            </div>
-          </div>
-
         </div>
       </div>
     </section>

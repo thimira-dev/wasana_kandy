@@ -82,8 +82,8 @@ export function CheckoutDetailsView({ branches }: CheckoutDetailsViewProps) {
           <CheckoutDetailsForm branches={branches} />
         </div>
 
-        {/* RIGHT COLUMN: Order Summary (Sticky on Desktop) */}
-        <div className="lg:col-span-5 lg:sticky lg:top-24">
+        {/* RIGHT COLUMN: Order Summary (Desktop only, hidden on mobile) */}
+        <div className="hidden lg:block lg:col-span-5 lg:sticky lg:top-24">
           <CheckoutOrderSummary order={order} showEditLink={true} />
         </div>
       </div>

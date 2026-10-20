@@ -106,7 +106,7 @@ export function Navbar() {
         ].join(" ")}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-[74px] gap-4">
+          <div className="flex items-center h-[64px] gap-4">
 
             {/* ── LOGO ── */}
             <Link
@@ -114,12 +114,12 @@ export function Navbar() {
               className="flex items-center gap-3 shrink-0 group mr-2"
               aria-label="Wasana Bakers — Home"
             >
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 overflow-hidden rounded-2xl border border-[#F59E0B]/30 bg-gradient-to-br from-amber-50 to-orange-50/50 group-hover:scale-105 group-hover:border-[#F59E0B] transition-all duration-200 shadow-xs">
+              <div className="relative w-12 h-12 sm:w-14 sm:h-14 shrink-0 overflow-hidden rounded-2xl border border-[#F59E0B]/30 bg-gradient-to-br from-amber-50 to-orange-50/50 group-hover:scale-105 group-hover:border-[#F59E0B] transition-all duration-200 shadow-xs">
                 <Image
                   src="/branding/wasana-logo.png"
                   alt="Wasana Bakers Logo"
                   fill
-                  sizes="64px"
+                  sizes="44px"
                   priority
                   className="object-contain p-1"
                 />
@@ -129,7 +129,7 @@ export function Navbar() {
                   Wasana Bakers
                 </span>
                 <span className="text-[9.5px] font-bold tracking-[0.16em] uppercase bg-gradient-to-r from-[#855300] to-[#D97706] bg-clip-text text-transparent block mt-1">
-                  Artisanal Confectionery
+                  Kandy, Sri Lanka
                 </span>
               </div>
             </Link>
@@ -396,17 +396,6 @@ export function Navbar() {
                 </div>
               </div>
 
-              {/* Staff Portal Link */}
-              <div className="pt-3 border-t border-[#F59E0B]/20">
-                <Link
-                  href="/admin"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 text-xs font-bold btn-primary-gold rounded-full shadow-md"
-                >
-                  <LogIn className="w-4 h-4" aria-hidden="true" />
-                  Staff Sign In
-                </Link>
-              </div>
             </div>
           )}
         </div>

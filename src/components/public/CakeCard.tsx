@@ -107,77 +107,64 @@ export function CakeCard({
           />
         </Link>
 
-        {/* Floating Badge (Confection Ruby Red or Bakery Gold) Top-Left */}
-        {badge && (
-          <span
-            className={`absolute top-2.5 left-2.5 px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase rounded-full shadow-sm ${
-              badge.isRuby
-                ? "bg-[#E11D48] text-white"
-                : "bg-[#F59E0B] text-[#1B1C1A]"
-            }`}
-          >
-            {badge.label}
-          </span>
-        )}
-
-        {/* Wishlist Heart Button Top-Right */}
+        {/* Wishlist Heart — smaller hit target on mobile */}
         <button
           type="button"
           onClick={() => setIsSaved((prev) => !prev)}
           aria-label={`Save ${displayName}`}
-          className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full backdrop-blur-md border border-white/60 flex items-center justify-center shadow-sm hover:scale-110 transition-all duration-150 ${
+          className={`absolute top-1.5 right-1.5 sm:top-2.5 sm:right-2.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full backdrop-blur-md border border-white/60 flex items-center justify-center shadow-sm hover:scale-110 transition-all duration-150 ${
             isSaved
               ? "bg-[#E11D48] text-white"
               : "bg-white/80 text-[#1B1C1A] hover:bg-white hover:text-[#E11D48]"
           }`}
         >
-          <Heart className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} aria-hidden="true" />
+          <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isSaved ? "fill-current" : ""}`} aria-hidden="true" />
         </button>
       </div>
 
-      {/* ── CARD CONTENT ── */}
-      <div className="p-3.5 flex flex-col flex-1 gap-1.5">
+      {/* ── CARD CONTENT — responsive padding ── */}
+      <div className="p-2.5 sm:p-3.5 flex flex-col flex-1 gap-1 sm:gap-1.5">
 
-        {/* Playfair Display Title */}
-        <h3 className="font-serif text-[14px] sm:text-[15px] font-bold text-[#1B1C1A] leading-snug line-clamp-2">
+        {/* Title — responsive sizing */}
+        <h3 className="font-serif text-[12px] sm:text-[14px] md:text-[15px] font-bold text-[#1B1C1A] leading-snug line-clamp-2">
           <Link href={`/cakes/${slug}`} className="hover:text-[#F59E0B] transition-colors">
             {displayName}
           </Link>
         </h3>
 
-        {/* Short Description */}
+        {/* Short Description — hidden on very small screens, 1 line on mobile, 2 on desktop */}
         {shortDescription && (
-          <p className="text-[11px] text-[#534434] line-clamp-2 leading-relaxed flex-1">
+          <p className="text-[10px] sm:text-[11px] text-[#534434] line-clamp-2 leading-relaxed flex-1">
             {shortDescription}
           </p>
         )}
 
-        {/* Price Block (Plus Jakarta Sans 700/800) */}
-        <div className="mt-auto pt-1 flex items-baseline justify-between">
-          <p className="text-price-md text-[#1B1C1A]">
+        {/* Price & Catalogue Code — wraps to column on narrow screens */}
+        <div className="mt-auto pt-1 flex flex-col min-[400px]:flex-row min-[400px]:items-baseline min-[400px]:justify-between gap-0.5">
+          <p className="text-[13px] sm:text-price-md font-extrabold text-[#1B1C1A] leading-tight">
             {formatLKR(numPrice)}
           </p>
           {catalogueCode && (
-            <span className="text-[10px] font-bold tracking-wider uppercase text-[#867461]">
+            <span className="text-[9px] sm:text-[10px] font-bold tracking-wider uppercase text-[#867461]">
               #{catalogueCode}
             </span>
           )}
         </div>
 
-        {/* Quick Buy CTA Row */}
-        <div className="flex items-center gap-2 mt-2">
+        {/* CTA Buttons — stack vertically on tiny screens, side-by-side otherwise */}
+        <div className="flex flex-col min-[360px]:flex-row items-stretch min-[360px]:items-center gap-1.5 sm:gap-2 mt-1.5 sm:mt-2">
           <Link
             href={`/cakes/${slug}`}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 text-[12px] font-bold btn-primary-gold rounded-full transition-all"
+            className="flex-1 inline-flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-bold btn-primary-gold rounded-full transition-all"
             aria-label={`Order ${displayName}`}
           >
-            <ShoppingBag className="w-3.5 h-3.5" aria-hidden="true" />
+            <ShoppingBag className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
             Buy
           </Link>
 
           <Link
             href={`/cakes/${slug}`}
-            className="px-3 py-2 text-[12px] font-semibold btn-glass whitespace-nowrap"
+            className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold btn-glass whitespace-nowrap text-center"
             aria-label={`View ${displayName} details and customizations`}
           >
             View

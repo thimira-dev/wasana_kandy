@@ -2,12 +2,14 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ProductService } from "@/lib/services/product-service";
 import { CakeCard } from "@/components/public/CakeCard";
+import { CategoryCakeGrid } from "@/components/public/CategoryCakeGrid";
 import { CatalogueFilterBar } from "@/components/public/CatalogueFilterBar";
-import { Pagination } from "@/components/public/Pagination";
 import { HowToOrderBanner } from "@/components/public/HowToOrderBanner";
 import { CustomerFeedbackSection } from "@/components/public/CustomerFeedbackSection";
 import { AteliersMapSection } from "@/components/public/AteliersMapSection";
-import { Cake, RotateCcw, Sparkles } from "lucide-react";
+import { Cake, RotateCcw } from "lucide-react";
+import { MAIN_CATEGORIES } from "@/lib/domain/catalogue";
+import type { CakeCardProps } from "@/components/public/CakeCard";
 
 export const revalidate = 0;
 
@@ -17,15 +19,12 @@ export const metadata = {
     "Explore bespoke celebration cakes, gateaux, and confections handcrafted daily in Kandy, Sri Lanka.",
 };
 
-const ITEMS_PER_PAGE = 12;
-
 interface CakesPageProps {
   searchParams: Promise<{
     search?: string;
     category?: string;
     collection?: string;
     sort?: string;
-    page?: string;
   }>;
 }
 
@@ -35,8 +34,6 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
   const category   = params.category   || "";
   const collection = params.collection || "";
   const sort       = params.sort       || "newest";
-  const rawPage    = parseInt(params.page || "1", 10);
-  const currentPage = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
 
   const allCakes = await ProductService.getPublishedProducts({
     search,
@@ -46,16 +43,47 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
   });
 
   const totalCakes = allCakes.length;
-  const totalPages = Math.ceil(totalCakes / ITEMS_PER_PAGE);
-  const validPage = Math.min(currentPage, Math.max(1, totalPages));
-
-  const startIndex = (validPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalCakes);
-  const cakes = allCakes.slice(startIndex, endIndex);
 
   const isFiltering = Boolean(
     search.trim() || category.trim() || collection.trim() || (sort && sort !== "newest")
   );
+
+  /* ── Group cakes by mainCategory (preserve MAIN_CATEGORIES order) ── */
+  const categoryMap = new Map<string, CakeCardProps[]>();
+
+  for (const cake of allCakes) {
+    const cat = cake.mainCategory || "Other Cakes";
+    const primaryImg = cake.images.find((img) => img.isPrimary) || cake.images[0];
+    const cardProps: CakeCardProps = {
+      id: cake.id,
+      name: cake.name,
+      slug: cake.slug,
+      catalogueCode: cake.catalogueCode,
+      mainCategory: cake.mainCategory,
+      isSeasonal: cake.isSeasonal,
+      basePrice: cake.basePrice.toString(),
+      shortDescription: cake.shortDescription,
+      imageUrl: primaryImg?.url,
+      altText: primaryImg?.altText || cake.name,
+    };
+    if (!categoryMap.has(cat)) {
+      categoryMap.set(cat, []);
+    }
+    categoryMap.get(cat)!.push(cardProps);
+  }
+
+  /* Order categories: known categories first (in defined order), then any extras */
+  const orderedCategories: string[] = [];
+  for (const knownCat of MAIN_CATEGORIES) {
+    if (categoryMap.has(knownCat)) {
+      orderedCategories.push(knownCat);
+    }
+  }
+  for (const cat of categoryMap.keys()) {
+    if (!orderedCategories.includes(cat)) {
+      orderedCategories.push(cat);
+    }
+  }
 
   return (
     <div className="bg-[#FAF9F5] min-h-screen">
@@ -76,32 +104,9 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
             </Suspense>
           </div>
 
-          {/* ── RIGHT COLUMN: HERO BANNER + CAKE GRID + PAGINATION (col-span-9) ── */}
+          {/* ── RIGHT COLUMN: CATEGORY-WISE CAKE SECTIONS (col-span-9) ── */}
           <div className="lg:col-span-9 xl:col-span-9">
             
-            {/* ── MASTHEAD HERO BANNER ── */}
-            <div className="mb-6 p-6 sm:p-8 glass-floating relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-[#F59E0B]/10 blur-3xl pointer-events-none" aria-hidden="true" />
-              
-              <div className="relative z-10 max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F59E0B]/15 border border-[#F59E0B]/30 mb-3">
-                  <Sparkles className="w-3.5 h-3.5 text-[#855300]" />
-                  <span className="text-[11px] font-bold tracking-widest uppercase text-[#855300]">
-                    Artisanal Confectionery Vitrine
-                  </span>
-                </div>
-
-                <h1 className="text-headline-xl text-[#1B1C1A] leading-tight">
-                  Bespoke Celebration Cakes
-                </h1>
-                
-                <p className="text-[14px] sm:text-[15px] text-[#534434] mt-2 leading-relaxed">
-                  Handcrafted in the central highlands of Kandy. Search catalogue codes and refine your selections using the left menu.
-                </p>
-              </div>
-            </div>
-
-            {/* ── PRODUCTS MATRIX GRID (4 Columns on Desktop) ── */}
             <main>
               {totalCakes === 0 ? (
                 <div className="py-16 max-w-md mx-auto text-center glass-floating p-8">
@@ -128,40 +133,23 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
                 </div>
               ) : (
                 <>
+                  {/* Summary bar */}
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-[12px] font-semibold text-[#534434]">
-                      Displaying <span className="font-bold text-[#f59e0b]">{startIndex + 1}–{endIndex}</span> of <span className="font-bold text-[#1B1C1A]">{totalCakes}</span> bespoke cake creation{totalCakes !== 1 ? "s" : ""}
+                      Showing <span className="font-bold text-[#1B1C1A]">{totalCakes}</span> cake creation{totalCakes !== 1 ? "s" : ""}
+                      {" "}across <span className="font-bold text-[#f59e0b]">{orderedCategories.length}</span> {orderedCategories.length === 1 ? "category" : "categories"}
                       {isFiltering && " · Filtered"}
                     </p>
-                    <span className="text-[11px] font-bold tracking-wider uppercase text-[#ffffff] hidden sm:block">
-                      4-Column Desktop Matrix
-                    </span>
                   </div>
 
-                  {/* Grid matrix: 4 columns on Desktop (lg:grid-cols-4 xl:grid-cols-4), 2 columns on Mobile */}
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 animate-children">
-                    {cakes.map((cake) => {
-                      const primaryImg = cake.images.find((img) => img.isPrimary) || cake.images[0];
-                      return (
-                        <CakeCard
-                          key={cake.id}
-                          id={cake.id}
-                          name={cake.name}
-                          slug={cake.slug}
-                          catalogueCode={cake.catalogueCode}
-                          mainCategory={cake.mainCategory}
-                          isSeasonal={cake.isSeasonal}
-                          basePrice={cake.basePrice.toString()}
-                          shortDescription={cake.shortDescription}
-                          imageUrl={primaryImg?.url}
-                          altText={primaryImg?.altText || cake.name}
-                        />
-                      );
-                    })}
-                  </div>
-
-                  {/* ── PAGINATION ── */}
-                  <Pagination currentPage={validPage} totalPages={totalPages} />
+                  {/* ── CATEGORY-WISE SECTIONS ── */}
+                  {orderedCategories.map((catName) => (
+                    <CategoryCakeGrid
+                      key={catName}
+                      categoryName={catName}
+                      cakes={categoryMap.get(catName)!}
+                    />
+                  ))}
                 </>
               )}
             </main>
@@ -181,23 +169,7 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
       {/* ── ATELIERS & BOUTIQUES MAP SECTION ── */}
       <AteliersMapSection />
 
-      {/* ── MOBILE TRUST STRIP ── */}
-      <div className="mb-8 mx-4 sm:mx-6 lg:mx-8 xl:mx-auto max-w-[1320px] rounded-2xl glass-card p-5 grid grid-cols-2 gap-4 sm:hidden">
-        {[
-          { emoji: "🧈", label: "AOP Charentes Butter",     sub: "Slow barrel-churned cultured cream." },
-          { emoji: "🌸", label: "Pesticide-Free Florals",   sub: "Organic edible botanicals." },
-          { emoji: "🥚", label: "Pasture-Raised Eggs",      sub: "Regenerative farm sourced." },
-          { emoji: "🎂", label: "Baked-to-Order Fresh",     sub: "Never frozen, hand-decorated." },
-        ].map((item) => (
-          <div key={item.label} className="flex items-start gap-2.5">
-            <span className="text-xl mt-0.5" aria-hidden="true">{item.emoji}</span>
-            <div>
-              <p className="text-[11px] font-bold text-[#1B1C1A] leading-tight">{item.label}</p>
-              <p className="text-[10px] text-[#534434] leading-snug mt-0.5">{item.sub}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      
     </div>
   );
 }
