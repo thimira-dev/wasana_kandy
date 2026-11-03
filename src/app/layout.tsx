@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Plus_Jakarta_Sans, Dancing_Script } from "next/font/google";
 import "./globals.css";
+import PageLoader from "@/components/public/PageLoader";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -46,6 +47,7 @@ export default function RootLayout({
       className={`h-full ${jakarta.variable}`}
     >
       <body className="min-h-full flex flex-col bg-[#FAF7F2] text-[#3D2B24] antialiased font-jakarta">
+        <PageLoader />
         {children}
       </body>
     </html>

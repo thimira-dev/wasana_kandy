@@ -14,7 +14,7 @@ import type { CakeCardProps } from "@/components/public/CakeCard";
 export const revalidate = 0;
 
 export const metadata = {
-  title: "Artisanal Celebration Cakes | Wasana Bakers Kandy",
+  title: "Wasana Bakers Kandy",
   description:
     "Explore bespoke celebration cakes, gateaux, and confections handcrafted daily in Kandy, Sri Lanka.",
 };
