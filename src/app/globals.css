@@ -109,6 +109,7 @@
 
   /* Prevent iOS Safari / Android auto-zoom on input focus */
   @media (max-width: 767px) {
+
     input,
     select,
     textarea {
