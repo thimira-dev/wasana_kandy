@@ -10,7 +10,8 @@ Use a Supabase project dedicated to this test site. Set these variables in Verce
 
 | Variable | Value |
 | --- | --- |
-| `DATABASE_URL` | Test Supabase PostgreSQL session-pooler connection URL, port 5432; URL-encode special characters in the password |
+| `DATABASE_URL` | Test Supabase transaction-pooler URL, port 6543, with `pgbouncer=true&connection_limit=1&pool_timeout=20`; URL-encode special characters in the password |
+| `DIRECT_URL` | Same test database via the session pooler on port 5432, used by Prisma migrations |
 | `AUTH_SECRET` | Random secret of at least 32 characters |
 | `APP_URL` | Stable HTTPS origin used to open the test site, without a trailing path |
 | `NEXT_PUBLIC_APP_URL` | Same origin as `APP_URL` |

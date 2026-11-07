@@ -9,6 +9,7 @@ if (!databaseUrl) {
 const env = {
   ...process.env,
   DATABASE_URL: databaseUrl,
+  DIRECT_URL: databaseUrl,
   SECURITY_TEST_DATABASE_URL: databaseUrl,
   NODE_ENV: "test",
 };
