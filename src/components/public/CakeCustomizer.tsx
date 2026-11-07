@@ -345,7 +345,7 @@ export function CakeCustomizer({ product }: CakeCustomizerProps) {
         <div className="border-b border-[#E9E8E4] pb-4 sm:pb-5">
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
             {product.catalogueCode && (
-              <span className="inline-flex items-center px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-mono font-bold bg-black/60 backdrop-blur-md text-[#F59E0B] tracking-wider rounded-full py-1 sm:py-2.5">
+              <span className="inline-flex items-center px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-mono font-bold bg-white/15 backdrop-blur-md text-[#F59E0B] tracking-wider rounded-full py-1 sm:py-2.5">
                 Code: {product.catalogueCode}
               </span>
             )}
