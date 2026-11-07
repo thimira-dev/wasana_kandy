@@ -98,7 +98,7 @@ export function CatalogueFilterBar({
             <div className="w-7 h-7 rounded-full bg-[#F59E0B]/20 flex items-center justify-center shrink-0">
               <Filter className="w-3.5 h-3.5 text-[#855300]" />
             </div>
-            <h2 className="font-serif text-base font-bold tracking-tight">Vitrine Filters</h2>
+            <h2 className="font-serif text-base font-bold tracking-tight">Filters</h2>
           </div>
           {hasActiveFilters && (
             <button
