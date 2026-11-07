@@ -28,6 +28,9 @@ export function getPaymentConfig() {
   if (mode !== "test") throw new Error("Live payments are not enabled");
 
   if (provider === "simulation") {
+    if (process.env.NODE_ENV === "production" && process.env.PAYMENT_ALLOW_SIMULATION !== "true") {
+      throw new Error("Simulation checkout is disabled. Enable it explicitly on staging only.");
+    }
     let simulationSecret = process.env.PAYMENT_SIMULATION_SECRET || "";
     if (!simulationSecret) {
       if (process.env.NODE_ENV === "production") {

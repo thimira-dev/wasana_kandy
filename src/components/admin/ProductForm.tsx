@@ -286,7 +286,7 @@ export function ProductForm({ initialData, isEditing = false, categories, collec
                 )}
             </select>
             <p className="text-[11px] text-stone-400 mt-1">
-              Collection letter code as printed in Wasana's physical catalogue.
+              Collection letter code as printed in Wasana&apos;s physical catalogue.
             </p>
           </div>
 
@@ -324,7 +324,7 @@ export function ProductForm({ initialData, isEditing = false, categories, collec
             </div>
             {previewCode && (
               <span className="text-[10px] text-stone-400 mt-1 pl-1">
-                Zero-padded format matching Wasana's physical catalogue.
+                Zero-padded format matching Wasana&apos;s physical catalogue.
               </span>
             )}
           </div>

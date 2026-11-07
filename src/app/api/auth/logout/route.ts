@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { clearAdminSessionCookie, getAdminSession } from "@/lib/auth/session";
+import { clearAdminSessionCookie, getAdminSession, revokeAdminSession } from "@/lib/auth/session";
 
 export async function POST() {
-  const response = NextResponse.json({ success: true });
+  await revokeAdminSession();
+  const response = NextResponse.json({ success: true }, { headers: { "Cache-Control": "no-store" } });
   clearAdminSessionCookie(response);
   return response;
 }
@@ -12,5 +13,5 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
-  return NextResponse.json({ authenticated: true, user: session });
+  return NextResponse.json({ authenticated: true, user: session }, { headers: { "Cache-Control": "no-store" } });
 }

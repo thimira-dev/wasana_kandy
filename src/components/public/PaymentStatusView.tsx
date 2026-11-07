@@ -11,6 +11,9 @@ interface Status {
   orderNumber: string;
   orderStatus: string;
   paymentStatus: string;
+  isTest: boolean;
+  paymentReviewRequired: boolean;
+  paymentUnavailableReason: string | null;
   total: string;
   pickup: { branch: string; address: string; readyDate: string };
   latestPaymentAttempt: { status: string; failureMessage: string | null; expiresAt: string | null } | null;
@@ -86,13 +89,13 @@ export function PaymentStatusView({ orderNumber, result }: { orderNumber: string
   const failed = attempt?.status === "FAILED" || status?.paymentStatus === "FAILED";
   const cancelled = status?.orderStatus === "CANCELLED" || result === "cancelled";
   const refunded = status?.paymentStatus === "REFUNDED";
-  const canRetry = !checking && !unavailable && !paid && status?.orderStatus === "PAYMENT_PENDING" && !refunded;
+  const canRetry = !status?.paymentUnavailableReason && !checking && !unavailable && !paid && status?.orderStatus === "PAYMENT_PENDING" && !refunded;
   const title = unavailable ? "We couldn't open this order." : checking ? "Checking your payment"
-    : paid ? "Payment successful" : refunded ? "Payment refunded" : failed ? "Payment was unsuccessful"
+    : paid && status?.paymentReviewRequired ? "Payment received — bakery review required" : paid ? "Payment successful" : refunded ? "Payment refunded" : failed ? "Payment was unsuccessful"
     : expired ? "Payment session expired" : cancelled ? "Payment cancelled" : "Payment confirmation pending";
   const message = unavailable ? "Please return to the checkout and try again."
     : checking ? "We're confirming the payment securely."
-    : paid ? "Your cake order is confirmed."
+    : paid && status?.paymentReviewRequired ? "Your payment was recorded, but your pickup date needs review. Please contact the bakery before collecting your cake." : paid ? "Your cake order is confirmed."
     : refunded ? "This payment has been refunded. Please contact the bakery if you need help."
     : failed ? "No confirmed payment was recorded. You can try again with your saved order."
     : expired ? "Start a fresh payment session for your saved order."
@@ -129,6 +132,8 @@ export function PaymentStatusView({ orderNumber, result }: { orderNumber: string
             </div>
           </div>
 
+          {status?.isTest && <p role="note" className="mx-5 mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-center text-sm font-bold text-amber-900">Simulation — no money received. This is a test order.</p>}
+          {status?.paymentUnavailableReason && !paid && <p role="alert" className="mx-5 mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{status.paymentUnavailableReason}</p>}
           {status && !unavailable && (
             <div className="mx-5 mb-6 rounded-xl border border-stone-200 bg-stone-50 p-4 sm:mx-8 sm:p-5">
               <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-stone-700">Your order</h2>

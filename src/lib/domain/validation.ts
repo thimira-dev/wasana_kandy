@@ -163,8 +163,8 @@ export type ProductInput = z.input<typeof productSchema>;
 export type ProductOutput = z.output<typeof productSchema>;
 
 export const adminLoginSchema = z.object({
-  email: z.string().email("Please enter a valid email address").toLowerCase().trim(),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().max(254).email("Please enter a valid email address").toLowerCase().trim(),
+  password: z.string().min(6, "Password must be at least 6 characters").max(128),
 });
 
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
@@ -273,8 +273,8 @@ export function validateCustomerSelections(
 }
 
 export const checkoutDetailsSchema = z.object({
-  customerName: z.string().min(2, "Please enter your full name").trim(),
-  customerEmail: z.string().email("Please enter a valid email address").toLowerCase().trim(),
+  customerName: z.string().trim().min(2, "Please enter your full name").max(120),
+  customerEmail: z.string().max(254).email("Please enter a valid email address").toLowerCase().trim(),
   phonePrimary: z
     .string()
     .min(1, "Please enter your primary contact number")
@@ -316,10 +316,10 @@ export const createOrderSchema = checkoutDetailsSchema.extend({
     z.object({
       optionId: z.string().optional(),
       optionIds: z.array(z.string()).optional(),
-      textValue: z.string().optional(),
+      textValue: z.string().max(2000).optional(),
     })
   ),
-  idempotencyKey: z.string().optional().nullable(),
+  idempotencyKey: z.string().min(16).max(100).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

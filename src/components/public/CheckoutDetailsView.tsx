@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { useBrowserStorage } from "@/lib/client/browser-storage";
 import Link from "next/link";
-import { Cake, ArrowLeft, AlertCircle } from "lucide-react";
+import { Cake, ArrowLeft } from "lucide-react";
 import { CheckoutDetailsForm, BranchData } from "./CheckoutDetailsForm";
 import { CheckoutOrderSummary, PendingOrderState } from "./CheckoutOrderSummary";
 
@@ -11,26 +12,8 @@ interface CheckoutDetailsViewProps {
 }
 
 export function CheckoutDetailsView({ branches }: CheckoutDetailsViewProps) {
-  const [order, setOrder] = useState<PendingOrderState | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = sessionStorage.getItem("wasana_pending_order");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.productId && parsed.productName) {
-            setOrder(parsed);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load order from session storage:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  }, []);
+  const { value: storedOrder, isLoading } = useBrowserStorage<PendingOrderState>("wasana_pending_order");
+  const order = storedOrder?.productId && storedOrder.productName ? storedOrder : null;
 
   if (isLoading) {
     return (

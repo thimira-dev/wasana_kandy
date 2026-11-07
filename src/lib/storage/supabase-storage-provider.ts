@@ -1,3 +1,4 @@
+import { normalizeImage } from "./image-validation";
 import path from "path";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -45,15 +46,12 @@ export class SupabaseStorageProvider implements StorageProvider {
   }
 
   async upload(fileBuffer: Buffer, fileName: string, mimeType: string): Promise<string> {
-    const validation = this.validateFile(fileBuffer.length, mimeType);
-    if (!validation.valid) {
-      throw new Error(validation.error || "Invalid file");
-    }
+    const image = await normalizeImage(fileBuffer, mimeType);
 
     // Sanitize filename and create unique timestamped name
-    const ext = path.extname(fileName) || this.getExtensionFromMimeType(mimeType);
+    const ext = ".webp";
     const baseName = path
-      .basename(fileName, ext)
+      .basename(fileName, path.extname(fileName))
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "-")
       .substring(0, 50);
@@ -63,8 +61,8 @@ export class SupabaseStorageProvider implements StorageProvider {
 
     const { error: uploadError } = await this.client.storage
       .from(this.bucket)
-      .upload(filePath, fileBuffer, {
-        contentType: mimeType,
+      .upload(filePath, image, {
+        contentType: "image/webp",
         upsert: false,
       });
 
@@ -116,17 +114,4 @@ export class SupabaseStorageProvider implements StorageProvider {
     }
   }
 
-  private getExtensionFromMimeType(mimeType: string): string {
-    switch (mimeType) {
-      case "image/png":
-        return ".png";
-      case "image/webp":
-        return ".webp";
-      case "image/avif":
-        return ".avif";
-      case "image/jpeg":
-      default:
-        return ".jpg";
-    }
-  }
 }

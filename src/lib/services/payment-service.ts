@@ -1,3 +1,4 @@
+import { orderPaymentProblem } from "@/lib/payments/order-eligibility";
 import "server-only";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
@@ -40,7 +41,8 @@ export class PaymentService {
     const order = await PaymentService.authorized(input, db);
     const attempt = order.paymentAttempts[0];
     return { orderNumber: order.orderNumber, orderStatus: order.orderStatus,
-      paymentStatus: order.paymentStatus, total: order.total.toString(), currency: "LKR",
+      paymentStatus: order.paymentStatus, isTest: order.isTest, paymentReviewRequired: order.paymentReviewRequired,
+      paymentUnavailableReason: order.paymentStatus === "PAID" ? null : orderPaymentProblem(order), total: order.total.toString(), currency: "LKR",
       pickup: { branch: order.branch.name, address: order.branch.address, readyDate: order.readyDate.toISOString().slice(0, 10) },
       latestPaymentAttempt: attempt ? { status: attempt.status === "OPEN" && attempt.expiresAt && attempt.expiresAt.getTime() <= Date.now() ? "EXPIRED" : attempt.status, failureMessage: attempt.failureMessage,
         expiresAt: attempt.expiresAt?.toISOString() ?? null } : null };
@@ -56,6 +58,9 @@ export class PaymentService {
       if (order.orderStatus !== "PAYMENT_PENDING" || order.paymentStatus === "REFUNDED") {
         throw new PaymentError("This order is not available for payment.", 409);
       }
+      const unavailable = orderPaymentProblem(order);
+      if (unavailable) throw new PaymentError(unavailable, 409);
+      if (order.isTest !== (this.config.mode === "test")) throw new PaymentError("Payment environment does not match this order.", 409);
       // Also protect orders persisted before unsupported configuration was rejected.
       const unsupported = await tx.orderItem.findFirst({ where: { orderId: order.id, OR: [
         { customizations: { some: { fieldTypeSnapshot: { in: ["MULTI_SELECT", "IMAGE_UPLOAD"] } } } },
@@ -65,7 +70,7 @@ export class PaymentService {
       const amountCents = orderTotalToCents(order.total);
       if (amountCents < 1000 || amountCents > 100000000) throw new PaymentError("This order amount is outside the supported payment range.");
       const previous = order.paymentAttempts[0];
-      if (previous && (previous.mode !== this.config.mode.toUpperCase() || previous.amountCents !== BigInt(amountCents) || previous.currency !== "LKR")) {
+      if (previous && (previous.provider !== this.config.providerName || previous.mode !== this.config.mode.toUpperCase() || previous.amountCents !== BigInt(amountCents) || previous.currency !== "LKR")) {
         throw new PaymentError("Payment needs review by the bakery before retrying.", 409);
       }
       if (previous?.status === "CREATING") {
@@ -98,7 +103,7 @@ export class PaymentService {
     const cancelUrl = new URL(returnUrl); cancelUrl.searchParams.set("result", "cancelled");
     try {
       // No network operation runs within a database transaction.
-      const checkout = await this.provider.createCheckout({ amountCents: orderTotalToCents(order.total),
+      const checkout = await this.provider.createCheckout({ expiresAt: new Date(attempt.createdAt.getTime() + 60 * 60 * 1000).toISOString(), amountCents: orderTotalToCents(order.total),
         reference: order.orderNumber, description: `Wasana cake order ${order.orderNumber}`.slice(0, 120),
         customer: { name: order.customerName, email: order.customerEmail, phone: order.phonePrimary },
         successUrl: successUrl.href, cancelUrl: cancelUrl.href }, `wasana:checkout:${attempt.id}`);
@@ -111,10 +116,18 @@ export class PaymentService {
       if (!["open", "expired"].includes(checkout.status)) {
         throw new PaymentError("Payment is processing or requires review. Check the order status before retrying.", 409);
       }
-      await this.db.paymentAttempt.updateMany({ where: { id: attempt.id, status: "CREATING" }, data: {
+      const saved = await this.db.paymentAttempt.updateMany({ where: { id: attempt.id, status: "CREATING" }, data: {
         providerCheckoutId: checkout.id, providerPaymentId: checkout.paymentId, checkoutUrl: checkout.url,
         expiresAt: new Date(checkout.expiresAt), status: checkout.status === "expired" ? "EXPIRED" : "OPEN", failureMessage: null,
       } });
+      if (!saved.count) {
+        const winner = await this.db.paymentAttempt.findUnique({ where: { id: attempt.id } });
+        if (winner?.status === "SUCCEEDED") return { alreadyPaid: true };
+        if (winner?.status === "OPEN" && winner.checkoutUrl && winner.expiresAt && winner.expiresAt.getTime() > Date.now()) {
+          return { checkoutUrl: winner.checkoutUrl };
+        }
+        throw new PaymentError("Payment is processing. Please check the order status.", 409);
+      }
       if (checkout.status !== "open") throw new PaymentError("Payment is processing or requires review. Check the order status before retrying.", 409);
       return { checkoutUrl: checkout.url };
     } catch (error) {
@@ -160,7 +173,8 @@ export class PaymentService {
       }
       await tx.$queryRaw`SELECT id FROM orders WHERE id = ${attempt.orderId} FOR UPDATE`;
       const order = await tx.order.findUniqueOrThrow({ where: { id: attempt.orderId } });
-      const mismatch = event.mode !== this.config.mode || attempt.mode !== this.config.mode.toUpperCase() ? "Mode mismatch"
+      const mismatch = attempt.provider !== this.config.providerName || order.isTest !== (this.config.mode === "test") ? "Provider or order environment mismatch"
+        : event.mode !== this.config.mode || attempt.mode !== this.config.mode.toUpperCase() ? "Mode mismatch"
         : event.paymentId !== attempt.providerPaymentId ? "Payment identity mismatch"
         : attempt.amountCents !== BigInt(orderTotalToCents(order.total)) || attempt.currency !== "LKR" ? "Stored amount mismatch"
         : event.type !== "checkout.expired" && event.reference !== order.orderNumber ? "Reference mismatch"
@@ -177,7 +191,10 @@ export class PaymentService {
       if (event.type === "payment.succeeded") {
         const paidAt = new Date(event.succeededAt!);
         await tx.paymentAttempt.update({ where: { id: attempt.id }, data: { status: "SUCCEEDED", succeededAt: paidAt, failureMessage: null } });
-        await tx.order.update({ where: { id: order.id }, data: { paymentStatus: "PAID", orderStatus: "CONFIRMED", paidAt } });
+        // Record received funds even when fulfilment now needs human review.
+        const paymentReviewRequired = Boolean(orderPaymentProblem(order, paidAt));
+        await tx.order.update({ where: { id: order.id }, data: { paymentStatus: "PAID",
+          orderStatus: paymentReviewRequired ? "PAYMENT_PENDING" : "CONFIRMED", paymentReviewRequired, paidAt } });
       } else {
         // Expiry must not overwrite failure/success, nor failure overwrite success.
         const fresh = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attempt.id } });

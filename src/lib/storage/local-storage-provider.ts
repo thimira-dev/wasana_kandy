@@ -1,3 +1,4 @@
+import { normalizeImage } from "./image-validation";
 import fs from "fs/promises";
 import path from "path";
 import {
@@ -26,17 +27,14 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   async upload(fileBuffer: Buffer, fileName: string, mimeType: string): Promise<string> {
-    const validation = this.validateFile(fileBuffer.length, mimeType);
-    if (!validation.valid) {
-      throw new Error(validation.error || "Invalid file");
-    }
+    const image = await normalizeImage(fileBuffer, mimeType);
 
     await this.ensureDir();
 
     // Sanitize filename and create unique timestamped name
-    const ext = path.extname(fileName) || ".jpg";
+    const ext = ".webp";
     const baseName = path
-      .basename(fileName, ext)
+      .basename(fileName, path.extname(fileName))
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "-")
       .substring(0, 50);
@@ -44,7 +42,7 @@ export class LocalStorageProvider implements StorageProvider {
     const uniqueName = `${baseName}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
     const filePath = path.join(this.uploadDir, uniqueName);
 
-    await fs.writeFile(filePath, fileBuffer);
+    await fs.writeFile(filePath, image, { flag: "wx" });
 
     // Return public URL path served by Next.js from public/
     return `/uploads/${uniqueName}`;

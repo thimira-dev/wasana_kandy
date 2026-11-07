@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useBrowserStorage } from "@/lib/client/browser-storage";
 import { useRouter } from "next/navigation";
 import {
   User,
@@ -43,39 +44,24 @@ export function CheckoutDetailsForm({ branches }: CheckoutDetailsFormProps) {
   // Earliest date allowed (at least 4 calendar days in Asia/Colombo)
   const earliestDate = getEarliestReadyDate();
 
-  const [customerName, setCustomerName] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [phonePrimary, setPhonePrimary] = useState("");
-  const [phoneSecondary, setPhoneSecondary] = useState("");
-  const [branchId, setBranchId] = useState(branches[0]?.id || "");
-  const [readyDate, setReadyDate] = useState(earliestDate);
-
+  const { value: storedDetails } = useBrowserStorage<StoredCheckoutDetails>("wasana_checkout_details");
+  // Draft values take precedence once edited; storage provides the restored defaults.
+  const [nameDraft, setCustomerName] = useState<string | null>(null);
+  const [emailDraft, setCustomerEmail] = useState<string | null>(null);
+  const [primaryDraft, setPhonePrimary] = useState<string | null>(null);
+  const [secondaryDraft, setPhoneSecondary] = useState<string | null>(null);
+  const [branchDraft, setBranchId] = useState<string | null>(null);
+  const [dateDraft, setReadyDate] = useState<string | null>(null);
+  const customerName = nameDraft ?? storedDetails?.customerName ?? "";
+  const customerEmail = emailDraft ?? storedDetails?.customerEmail ?? "";
+  const phonePrimary = primaryDraft ?? storedDetails?.phonePrimary ?? "";
+  const phoneSecondary = secondaryDraft ?? storedDetails?.phoneSecondary ?? "";
+  const restoredBranch = branches.some(b => b.id === storedDetails?.branchId) ? storedDetails?.branchId : undefined;
+  const branchId = branchDraft ?? restoredBranch ?? branches[0]?.id ?? "";
+  const restoredDate = storedDetails?.readyDate && storedDetails.readyDate >= earliestDate ? storedDetails.readyDate : earliestDate;
+  const readyDate = dateDraft ?? restoredDate;
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Restore stored details if returning from review page
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = sessionStorage.getItem("wasana_checkout_details");
-        if (saved) {
-          const parsed: StoredCheckoutDetails = JSON.parse(saved);
-          if (parsed.customerName) setCustomerName(parsed.customerName);
-          if (parsed.customerEmail) setCustomerEmail(parsed.customerEmail);
-          if (parsed.phonePrimary) setPhonePrimary(parsed.phonePrimary);
-          if (parsed.phoneSecondary) setPhoneSecondary(parsed.phoneSecondary);
-          if (parsed.branchId && branches.some((b) => b.id === parsed.branchId)) {
-            setBranchId(parsed.branchId);
-          }
-          if (parsed.readyDate && parsed.readyDate >= earliestDate) {
-            setReadyDate(parsed.readyDate);
-          }
-        }
-      } catch (err) {
-        console.error("Error restoring checkout details:", err);
-      }
-    }
-  }, [branches, earliestDate]);
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};

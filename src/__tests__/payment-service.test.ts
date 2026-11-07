@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma, type PrismaClient, type PaymentAttempt, type PaymentEvent as StoredEvent } from "@prisma/client";
 import { PaymentService } from "@/lib/services/payment-service";
+import { SimulatedPaymentProvider } from "@/lib/payments/simulation-provider";
 import { orderTotalToCents } from "@/lib/payments/money";
 import type { PaymentEvent, PaymentProvider } from "@/lib/payments/payment-provider";
 import { OrderService } from "@/lib/services/order-service";
@@ -14,9 +15,9 @@ function fixture() {
   const attempts: PaymentAttempt[] = [];
   const events: Partial<StoredEvent>[] = [];
   const order = { id: "order_test", orderNumber: "WB-20261028-ABCD", accessToken: "browser_fixture_token",
-    orderStatus: "PAYMENT_PENDING", paymentStatus: "PENDING", total: new Prisma.Decimal("6500.00"),
+    isTest: true, paymentReviewRequired: false, createdAt: new Date(), orderStatus: "PAYMENT_PENDING", paymentStatus: "PENDING", total: new Prisma.Decimal("6500.00"),
     customerName: "Test Customer", customerEmail: "test@example.com", phonePrimary: "+94771234567",
-    readyDate: new Date("2026-11-10"), branch: { name: "Test branch", address: "Kandy" }, paidAt: null as Date | null };
+    readyDate: new Date(getEarliestReadyDate()), branch: { name: "Test branch", address: "Kandy" }, paidAt: null as Date | null };
   const access = { orderNumber: order.orderNumber, accessToken: order.accessToken };
   let unsupported = false;
   const db = {
@@ -186,5 +187,46 @@ describe("unsupported checkout customizations", () => {
   });
   it.each(["MULTI_SELECT", "IMAGE_UPLOAD"])("fails closed for active %s even if optional", fieldType => {
     expect(validateCustomerSelections([{ id: "group", name: "Choice", fieldType, isActive: true, isRequired: false, options: [] }], {}).isValid).toBe(false);
+  });
+});
+
+describe("Deployment regressions", () => {
+  it("blocks a stale order before registering a checkout", async () => {
+    const f = fixture(); f.order.createdAt = new Date(Date.now() - 25 * 3600000);
+    await expect(f.service.createCheckout(f.access)).rejects.toThrow("expired");
+    expect(f.provider.createCheckout).not.toHaveBeenCalled();
+    expect((await f.service.getStatus(f.access)).paymentUnavailableReason).toContain("expired");
+  });
+  it("blocks a pickup date that no longer meets the preparation rule", async () => {
+    const f = fixture(); f.order.readyDate = new Date("2000-01-01");
+    await expect(f.service.createCheckout(f.access)).rejects.toThrow("preparation");
+    expect(f.provider.createCheckout).not.toHaveBeenCalled();
+  });
+  it("returns the registered URL when simultaneous provider calls finish in reverse order", async () => {
+    const f = fixture();
+    const actual = new SimulatedPaymentProvider("https://wasana.example", "review_fixture_secret_0123456789abcdef");
+    let release!: () => void;
+    let started!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const firstStarted = new Promise<void>(resolve => { started = resolve; });
+    let calls = 0;
+    vi.mocked(f.provider.createCheckout).mockImplementation(async (input, key) => {
+      const checkout = await actual.createCheckout(input, key);
+      if (++calls === 1) { started(); await gate; }
+      return checkout;
+    });
+    const first = f.service.createCheckout(f.access);
+    await firstStarted;
+    const second = await f.service.createCheckout(f.access);
+    release();
+    expect(await first).toEqual(second);
+    expect(f.attempts).toHaveLength(1);
+    expect(new URL(second.checkoutUrl!).searchParams.get("c")).toBe(f.attempts[0].providerCheckoutId);
+  });
+  it("records late funds for review instead of promising an invalid pickup", async () => {
+    const f = fixture(); await f.service.createCheckout(f.access);
+    f.order.createdAt = new Date(Date.now() - 25 * 3600000);
+    await f.deliver(f.success());
+    expect(f.order).toMatchObject({ paymentStatus: "PAID", orderStatus: "PAYMENT_PENDING", paymentReviewRequired: true });
   });
 });

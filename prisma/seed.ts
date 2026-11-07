@@ -9,17 +9,16 @@ async function main() {
 
   // 1. Seed Initial SUPER_ADMIN account
   const adminEmail = process.env.ADMIN_EMAIL || "admin@wasanabakers.lk";
-  const adminPassword = process.env.ADMIN_PASSWORD || "WasanaAdmin2026!";
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
+  if (!existingAdmin && (!adminPassword || adminPassword.length < 14)) {
+    throw new Error("Set ADMIN_PASSWORD (at least 14 characters) to create the initial administrator.");
+  }
+  const passwordHash = existingAdmin?.passwordHash || await bcrypt.hash(adminPassword!, 12);
 
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
-    update: {
-      name: "Wasana Super Admin",
-      role: Role.SUPER_ADMIN,
-      passwordHash,
-      isActive: true,
-    },
+    update: {}, // Catalogue seeding must not reset credentials, roles, or account status.
     create: {
       email: adminEmail,
       name: "Wasana Super Admin",

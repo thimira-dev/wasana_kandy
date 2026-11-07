@@ -1,6 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useState, useMemo } from "react";
+import { useBrowserStorage, notifyBrowserStorageChange } from "@/lib/client/browser-storage";
+import type { CustomerCustomizationSelections } from "@/lib/domain/validation";
 import { formatLKR } from "@/lib/domain/pricing";
 
 export interface CartItem {
@@ -20,7 +22,7 @@ export interface CartItem {
     labelOrValue: string;
     priceAdjustment: string | number;
   }>;
-  selections?: Record<string, any>;
+  selections?: CustomerCustomizationSelections;
 }
 
 interface CartContextType {
@@ -44,31 +46,21 @@ const CART_STORAGE_KEY = "wasana_shopping_cart";
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const { value: storedItems } = useBrowserStorage<CartItem[]>(CART_STORAGE_KEY, "localStorage");
+  const [unsavedItems, setUnsavedItems] = useState<CartItem[] | null>(null);
+  const items = useMemo(() => unsavedItems ?? (Array.isArray(storedItems) ? storedItems : []), [unsavedItems, storedItems]);
   const [isOpen, setIsOpen] = useState(false);
   const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
 
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-        if (savedCart) {
-          setItems(JSON.parse(savedCart));
-        }
-      } catch (err) {
-        console.error("Failed to load cart from localStorage:", err);
-      }
-    }
-  }, []);
-
   // Sync cart to localStorage
   const saveItems = (newItems: CartItem[]) => {
-    setItems(newItems);
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newItems));
+        setUnsavedItems(null);
+        notifyBrowserStorageChange();
       } catch (err) {
+        setUnsavedItems(newItems);
         console.error("Failed to save cart to localStorage:", err);
       }
     }

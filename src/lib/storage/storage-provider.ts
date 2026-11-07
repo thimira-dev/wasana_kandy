@@ -42,6 +42,8 @@ export function validateStorageFile(size: number, mimeType: string): StorageVali
     };
   }
 
+  if (!Number.isSafeInteger(size) || size <= 0) return { valid: false, error: "Image file is empty or invalid." };
+
   if (size > MAX_IMAGE_FILE_SIZE) {
     return {
       valid: false,

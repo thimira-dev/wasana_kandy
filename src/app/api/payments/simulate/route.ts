@@ -1,8 +1,11 @@
+import { assertSameOrigin, readForm, securityErrorResponse } from "@/lib/security/requests";
+import { clientAddress, enforceRateLimit } from "@/lib/security/rate-limit";
 import { NextResponse } from "next/server";
 import { getPaymentService } from "@/lib/payments/runtime";
 import {
   completeSimulatedCheckout,
   SimulatedSettledError,
+  SimulatedGatewayError,
 } from "@/lib/payments/simulated-gateway";
 
 export const runtime = "nodejs";
@@ -15,9 +18,11 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   let form: FormData;
   try {
-    form = await request.formData();
-  } catch {
-    return new NextResponse("Invalid simulated checkout submission.", { status: 400 });
+    assertSameOrigin(request);
+    await enforceRateLimit("simulation-ip", clientAddress(request), 30, 60);
+    form = await readForm(request, 4096);
+  } catch (error) {
+    return securityErrorResponse(error) || new NextResponse("Invalid simulated checkout submission.", { status: 400 });
   }
 
   const raw = {
@@ -29,7 +34,8 @@ export async function POST(request: Request) {
   try {
     const processWebhook = (body: string, signature: string | null) =>
       getPaymentService().processWebhook(body, signature);
-    const { orderNumber, decision } = await completeSimulatedCheckout(raw, processWebhook);    const result = decision === "fail" ? "cancelled" : "success";
+    const { orderNumber, decision } = await completeSimulatedCheckout(raw, processWebhook);
+    const result = decision === "fail" ? "cancelled" : "success";
     const target = `/checkout/payment?orderNumber=${encodeURIComponent(orderNumber)}&result=${result}`;
     return NextResponse.redirect(new URL(target, resolveOrigin(request)), 303);
   } catch (error) {
@@ -37,10 +43,11 @@ export async function POST(request: Request) {
       const target = `/checkout/payment?orderNumber=${encodeURIComponent(error.orderNumber)}&result=success`;
       return NextResponse.redirect(new URL(target, resolveOrigin(request)), 303);
     }
+    if (error instanceof SimulatedGatewayError) return new NextResponse(error.message, { status: error.status });
     console.error("Simulated checkout could not be completed");
     return new NextResponse(
       "This simulated checkout could not be completed. Return to your payment page and retry.",
-      { status: 403, headers: { "Content-Type": "text/plain" } },
+      { status: 503, headers: { "Content-Type": "text/plain" } },
     );
   }
 }

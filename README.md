@@ -10,6 +10,14 @@ copy .env.example .env
 
 Set `DATABASE_URL` in `.env` to a reachable PostgreSQL or Supabase PostgreSQL database. The default value in `.env.example` expects PostgreSQL at `localhost:5432` with database `wasana_bakers`.
 
+Generate an authentication secret:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Paste the generated value into `AUTH_SECRET` in `.env`. This is required in every environment; empty, short, or placeholder secrets prevent startup. Keep `.env` private and use a separate secret for each deployment. `JWT_SECRET` is a legacy fallback; prefer `AUTH_SECRET`.
+
 After configuring the database, apply migrations and seed development data:
 
 ```bash
@@ -45,6 +53,10 @@ To learn more about Next.js, take a look at the following resources:
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
 ## Deploy on Vercel
+
+For the Vercel Hobby test deployment, follow [deployment requirements](docs/deployment-security.md#vercel-hobby-test-deployment). The configured build command validates environment variables and applies Prisma migrations before building. Simulated checkout requires explicit test settings and a dedicated test database.
+
+Run `npm run lint` and `npm test` for local checks. Run `TEST_DATABASE_URL="<disposable PostgreSQL URL>" npm run test:integration` for the complete suite, including database and security tests; this command migrates and modifies only the explicitly selected test database.
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 

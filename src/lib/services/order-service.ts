@@ -7,18 +7,29 @@ import crypto from "crypto";
 
 export class OrderValidationError extends Error {}
 
+function fingerprint(value: unknown): string {
+  function canonical(input: unknown): unknown {
+    if (Array.isArray(input)) return input.map(canonical);
+    if (input && typeof input === "object") return Object.fromEntries(
+      Object.entries(input).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, canonical(item)])
+    );
+    return input;
+  }
+  return crypto.createHash("sha256").update(JSON.stringify(canonical(value))).digest("hex");
+}
+
 export class OrderService {
   /**
    * Generates a unique, human-readable order number.
-   * Format: WB-YYYYMMDD-XXXX (e.g. WB-20260926-0041 or 4 alphanumeric chars)
+   * Format: WB-YYYYMMDD-XXXXXXXX (eight random hexadecimal characters)
    */
   static async generateOrderNumber(tx: Prisma.TransactionClient = prisma): Promise<string> {
     const { year, month, day } = getSriLankaDateParts();
     const dateStr = `${year}${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}`;
 
     for (let attempts = 0; attempts < 10; attempts++) {
-      // 4-character uppercase alphanumeric code
-      const randomSuffix = crypto.randomBytes(3).toString("hex").toUpperCase().slice(0, 4);
+      // Eight hexadecimal characters avoid frequent collisions as daily order volume grows.
+      const randomSuffix = crypto.randomBytes(4).toString("hex").toUpperCase();
       const orderNumber = `WB-${dateStr}-${randomSuffix}`;
 
       const existing = await tx.order.findUnique({
@@ -31,8 +42,7 @@ export class OrderService {
       }
     }
 
-    // Fallback timestamp suffix if collision
-    return `WB-${dateStr}-${Date.now().toString().slice(-4)}`;
+    return `WB-${dateStr}-${crypto.randomUUID().replace(/-/g, "").slice(0, 16).toUpperCase()}`;
   }
 
   /**
@@ -48,8 +58,23 @@ export class OrderService {
   /**
    * Creates a pending order atomically with authoritative server-side validation & pricing.
    */
-  static async createPendingOrder(rawInput: unknown) {
+  static async createPendingOrder(rawInput: unknown, ownerToken?: string) {
     const validated = createOrderSchema.parse(rawInput);
+    const { idempotencyKey: ignoredKey, ...requestData } = validated;
+    void ignoredKey;
+    const requestFingerprint = fingerprint(requestData);
+    const checkoutOwnerHash = ownerToken && /^[0-9a-f]{64}$/.test(ownerToken)
+      ? crypto.createHash("sha256").update(ownerToken).digest("hex") : null;
+    if (validated.idempotencyKey && !checkoutOwnerHash) {
+      throw new OrderValidationError("Please refresh checkout to establish your browser session.");
+    }
+    if (ownerToken && !validated.idempotencyKey) throw new OrderValidationError("An order retry key is required.");
+    const assertRetry = <T extends { checkoutOwnerHash: string | null; requestFingerprint: string | null }>(existing: T): T => {
+      if (existing.checkoutOwnerHash !== checkoutOwnerHash || existing.requestFingerprint !== requestFingerprint) {
+        throw new OrderValidationError("This checkout retry does not match the original order. Please start a new checkout.");
+      }
+      return existing;
+    };
 
     // 1. Idempotency Check: if idempotencyKey was already submitted, return existing order
     if (validated.idempotencyKey) {
@@ -64,7 +89,7 @@ export class OrderService {
       });
 
       if (existingOrder) {
-        return existingOrder;
+        return assertRetry(existingOrder);
       }
     }
 
@@ -172,6 +197,12 @@ export class OrderService {
 
     // 7. Atomic Database Transaction
     return await prisma.$transaction(async (tx) => {
+      if (validated.idempotencyKey) {
+        await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${validated.idempotencyKey}))`;
+        const existing = await tx.order.findUnique({ where: { idempotencyKey: validated.idempotencyKey },
+          include: { items: { include: { customizations: true } }, branch: true } });
+        if (existing) return assertRetry(existing);
+      }
       const orderNumber = await this.generateOrderNumber(tx);
       const accessToken = crypto.randomBytes(16).toString("hex");
 
@@ -182,6 +213,9 @@ export class OrderService {
         data: {
           orderNumber,
           idempotencyKey: validated.idempotencyKey || null,
+          checkoutOwnerHash,
+          requestFingerprint,
+          isTest: process.env.PAYMENT_MODE !== "live",
           accessToken,
           branchId: branch.id,
           customerName: validated.customerName,
@@ -262,6 +296,7 @@ export class OrderService {
     paymentStatus?: string;
     orderStatus?: string;
     branchId?: string;
+    page?: number;
   }) {
     const where: Prisma.OrderWhereInput = {};
 
@@ -277,7 +312,7 @@ export class OrderService {
       where.branchId = filters.branchId;
     }
 
-    const search = filters?.search?.trim();
+    const search = filters?.search?.trim().slice(0, 120);
     if (search) {
       where.OR = [
         { orderNumber: { contains: search, mode: "insensitive" } },
@@ -287,7 +322,10 @@ export class OrderService {
       ];
     }
 
+    const page = Math.min(10000, Math.max(1, Math.floor(filters?.page || 1)));
     return await prisma.order.findMany({
+      take: 51, // One extra row indicates that the next page exists.
+      skip: (page - 1) * 50,
       where,
       include: {
         branch: true,
@@ -298,7 +336,7 @@ export class OrderService {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     });
   }
 
@@ -334,7 +372,7 @@ export class OrderService {
   static async getAdminOrderStats() {
     const [paidAggregate, pendingCount, confirmedCount, totalCount, preparingCount] = await Promise.all([
       prisma.order.aggregate({
-        where: { paymentStatus: "PAID" },
+        where: { paymentStatus: "PAID", isTest: false },
         _sum: { total: true },
         _count: true,
       }),

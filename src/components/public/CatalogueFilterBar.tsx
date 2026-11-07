@@ -50,7 +50,11 @@ export function CatalogueFilterBar({
   const [searchVal, setSearchVal] = React.useState(currentSearch);
   const [mobileFilterOpen, setMobileFilterOpen] = React.useState(false);
 
-  React.useEffect(() => { setSearchVal(currentSearch); }, [currentSearch]);
+  const [previousSearch, setPreviousSearch] = React.useState(currentSearch);
+  if (previousSearch !== currentSearch) {
+    setPreviousSearch(currentSearch);
+    setSearchVal(currentSearch);
+  }
 
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());

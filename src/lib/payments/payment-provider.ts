@@ -1,5 +1,6 @@
 export type ProviderMode = "test" | "live";
 export interface CheckoutInput {
+  expiresAt?: string;
   amountCents: number;
   reference: string;
   description: string;

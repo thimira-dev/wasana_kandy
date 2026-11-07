@@ -1,3 +1,4 @@
+import { readJson, securityErrorResponse } from "@/lib/security/requests";
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth/session";
 import { Permissions } from "@/lib/auth/roles";
@@ -16,11 +17,13 @@ export async function PUT(request: Request, context: RouteContext) {
     }
 
     const { id } = await context.params;
-    const body = await request.json();
+    const body = await readJson(request);
     const collection = await CollectionService.updateCollection(id, body);
 
     return NextResponse.json({ success: true, collection });
   } catch (error) {
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
     console.error("Update collection error:", error);
     if (error instanceof ZodError) {
       return NextResponse.json(
@@ -51,6 +54,8 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     return NextResponse.json({ success: true, deleted: result });
   } catch (error) {
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
     console.error("Delete collection error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to delete collection" },

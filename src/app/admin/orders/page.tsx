@@ -16,6 +16,7 @@ interface AdminOrdersPageProps {
     paymentStatus?: string;
     orderStatus?: string;
     branch?: string;
+    page?: string;
   }>;
 }
 
@@ -29,12 +30,14 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
   }
 
   const filters = searchParams ? await searchParams : {};
+  const page = Math.min(10000, Math.max(1, Number.parseInt(filters.page || "1", 10) || 1));
   const [orders, stats, branches] = await Promise.all([
     OrderService.getAdminOrders({
       search: filters.search,
       paymentStatus: filters.paymentStatus,
       orderStatus: filters.orderStatus,
       branchId: filters.branch,
+      page,
     }),
     OrderService.getAdminOrderStats(),
     OrderService.getActiveBranches(),
@@ -42,8 +45,11 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
   return (
     <OrdersTable
-      initialOrders={orders.map((o) => ({
+      key={JSON.stringify(filters)}
+      initialOrders={orders.slice(0, 50).map((o) => ({
         id: o.id,
+        isTest: o.isTest,
+        paymentReviewRequired: o.paymentReviewRequired,
         orderNumber: o.orderNumber,
         customerName: o.customerName,
         customerEmail: o.customerEmail,
@@ -59,6 +65,9 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         itemCount: o._count.items,
         attemptCount: o._count.paymentAttempts,
       }))}
+      page={page}
+      hasNext={orders.length > 50}
+      filters={filters}
       stats={stats}
       branches={branches.map((b) => ({ id: b.id, name: b.name }))}
     />

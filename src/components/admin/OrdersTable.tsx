@@ -7,6 +7,8 @@ import { Search, ShoppingBag, ChevronRight, CreditCard, Clock, PackageCheck, Ban
 
 export interface AdminOrderRow {
   id: string;
+  isTest: boolean;
+  paymentReviewRequired: boolean;
   orderNumber: string;
   customerName: string;
   customerEmail: string;
@@ -35,6 +37,9 @@ export interface AdminOrderStats {
 interface OrdersTableProps {
   initialOrders: AdminOrderRow[];
   stats: AdminOrderStats;
+  page: number;
+  hasNext: boolean;
+  filters: { search?: string; paymentStatus?: string; orderStatus?: string; branch?: string };
   branches: Array<{ id: string; name: string }>;
 }
 
@@ -63,26 +68,19 @@ function Badge({ map, value }: { map: Record<string, { label: string; className:
   );
 }
 
-export function OrdersTable({ initialOrders, stats, branches }: OrdersTableProps) {
-  const [search, setSearch] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [branchFilter, setBranchFilter] = useState("all");
+export function OrdersTable({ initialOrders, stats, branches, page, hasNext, filters }: OrdersTableProps) {
+  const [search, setSearch] = useState(filters.search || "");
+  const [paymentFilter, setPaymentFilter] = useState(filters.paymentStatus || "all");
+  const [statusFilter, setStatusFilter] = useState(filters.orderStatus || "all");
+  const [branchFilter, setBranchFilter] = useState(filters.branch || "all");
 
-  const filtered = initialOrders.filter((o) => {
-    if (paymentFilter !== "all" && o.paymentStatus !== paymentFilter) return false;
-    if (statusFilter !== "all" && o.orderStatus !== statusFilter) return false;
-    if (branchFilter !== "all" && o.branchName !== branchFilter) return false;
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      const match = o.orderNumber.toLowerCase().includes(q) ||
-        o.customerName.toLowerCase().includes(q) ||
-        o.customerEmail.toLowerCase().includes(q) ||
-        o.phonePrimary.includes(q);
-      if (!match) return false;
-    }
-    return true;
-  });
+  const filtered = initialOrders;
+  const pageUrl = (next: number) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) if (value && key !== "page") params.set(key, value);
+    params.set("page", String(next));
+    return `/admin/orders?${params}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -143,24 +141,27 @@ export function OrdersTable({ initialOrders, stats, branches }: OrdersTableProps
       </div>
 
       {/* Filter / Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs flex flex-col gap-3">
+      <form action="/admin/orders" method="get" className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs flex flex-col gap-3">
         <div className="flex items-center gap-2.5 bg-stone-50 border border-stone-300 rounded-lg px-3 py-2 focus-within:bg-white focus-within:ring-2 focus-within:ring-amber-500">
           <Search className="w-4 h-4 text-stone-400 shrink-0" />
           <input
             type="text"
+            name="search"
+            maxLength={120}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by order number, customer name, email, or phone..."
             className="w-full text-xs sm:text-sm bg-transparent focus:outline-hidden text-stone-800 placeholder-stone-400"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="text-xs text-stone-400 hover:text-stone-600">
+            <button type="button" onClick={() => setSearch("")} className="text-xs text-stone-400 hover:text-stone-600">
               Clear
             </button>
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <select
+            name="paymentStatus"
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
             className="text-xs font-medium px-3 py-2 bg-stone-50 border border-stone-300 rounded-lg text-stone-700 focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer"
@@ -172,6 +173,7 @@ export function OrdersTable({ initialOrders, stats, branches }: OrdersTableProps
             <option value="REFUNDED">Refunded</option>
           </select>
           <select
+            name="orderStatus"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="text-xs font-medium px-3 py-2 bg-stone-50 border border-stone-300 rounded-lg text-stone-700 focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer"
@@ -185,18 +187,27 @@ export function OrdersTable({ initialOrders, stats, branches }: OrdersTableProps
             <option value="CANCELLED">Cancelled</option>
           </select>
           <select
+            name="branch"
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value)}
             className="text-xs font-medium px-3 py-2 bg-stone-50 border border-stone-300 rounded-lg text-stone-700 focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer"
           >
             <option value="all">All branches</option>
             {branches.map((b) => (
-              <option key={b.id} value={b.name}>{b.name}</option>
+              <option key={b.id} value={b.id}>{b.name}</option>
             ))}
           </select>
         </div>
-      </div>
-
+        <div className="flex items-center gap-4">
+          <button type="submit" className="rounded-lg bg-amber-700 px-4 py-2 text-xs font-bold text-white">Apply filters</button>
+          <Link href="/admin/orders" className="text-xs font-semibold text-stone-600">Reset</Link>
+        </div>
+      </form>
+      <nav aria-label="Order pages" className="flex items-center justify-between text-sm">
+        {page > 1 ? <Link href={pageUrl(page - 1)}>Previous</Link> : <span />}
+        <span>Page {page} · up to 50 orders per page</span>
+        {hasNext ? <Link href={pageUrl(page + 1)}>Next</Link> : <span />}
+      </nav>
       {/* Orders Table */}
       <div className="bg-white rounded-xl border border-stone-200 shadow-xs overflow-hidden">
         {filtered.length === 0 ? (
@@ -233,8 +244,10 @@ export function OrdersTable({ initialOrders, stats, branches }: OrdersTableProps
                     {/* Order number + date */}
                     <td className="px-5 py-4">
                       <span className="font-mono font-bold text-stone-900 block">{order.orderNumber}</span>
+                      {order.isTest && <span className="block text-xs font-bold text-amber-800">Simulation · no money received</span>}
+                      {order.paymentReviewRequired && <span className="block text-xs font-bold text-rose-800">Bakery review required</span>}
                       <span className="text-xs text-stone-400 block mt-0.5">
-                        {new Date(order.createdAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}
+                        {new Date(order.createdAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Colombo" })}
                       </span>
                       <span className="inline-flex items-center gap-1 text-[11px] text-stone-500 mt-1">
                         <Layers className="w-3 h-3" />

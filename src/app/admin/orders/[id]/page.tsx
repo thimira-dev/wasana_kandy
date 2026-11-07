@@ -60,10 +60,12 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   }
 
   const fmtDateTime = (d: Date | string) =>
-    new Date(d).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+    new Date(d).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Colombo" });
 
   return (
     <div className="space-y-6 max-w-5xl">
+      {order.isTest && <p role="note" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-bold text-amber-900">Simulation — no money received. Excluded from paid revenue.</p>}
+      {order.paymentReviewRequired && <p role="alert" className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm font-bold text-rose-900">Payment received after the fulfilment window. Contact the customer to arrange a new pickup date or refund before preparing this order.</p>}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-5">
         <div className="flex items-center gap-3">

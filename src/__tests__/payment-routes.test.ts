@@ -1,14 +1,16 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { PaymentError, PaymentService } from "@/lib/services/payment-service";
 import { POST as webhook } from "@/app/api/payments/webhook/route";
 import { POST as create } from "@/app/api/payments/create/route";
 import { POST as status } from "@/app/api/payments/status/route";
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/lib/security/rate-limit", () => ({ clientAddress: () => "test-ip", enforceRateLimit: vi.fn() }));
 const boundary = vi.hoisted(() => ({ createCheckout: vi.fn(), processWebhook: vi.fn() }));
 vi.mock("@/lib/payments/runtime", () => ({ getPaymentService: () => boundary }));
-afterEach(() => { vi.restoreAllMocks(); vi.resetAllMocks(); });
-const request = (path: string, body: string, headers: Record<string, string> = {}) => new Request(`https://wasana.example/api/payments/${path}`, { method: "POST", body, headers });
+beforeEach(() => vi.stubEnv("APP_URL", "https://wasana.example"));
+afterEach(() => { vi.restoreAllMocks(); vi.resetAllMocks(); vi.unstubAllEnvs(); });
+const request = (path: string, body: string, headers: Record<string, string> = {}) => new Request(`https://wasana.example/api/payments/${path}`, { method: "POST", body, headers: { "Origin": "https://wasana.example", "Content-Type": "application/json", ...headers } });
 describe("thin payment routes", () => {
   it("passes exact raw body and case-insensitive signature to verifier", async () => {
     const raw = '{ "object": "event", "id": "evt_test" }\n';
@@ -36,10 +38,19 @@ describe("thin payment routes", () => {
     expect((await status(request("status", access))).status).toBe(403);
   });
   it("status requires no payment credentials and returns no-store response", async () => {
-    const getStatus = vi.spyOn(PaymentService, "getStatus").mockResolvedValueOnce({ orderNumber: "WB-test", orderStatus: "PAYMENT_PENDING", paymentStatus: "PENDING", total: "6500", currency: "LKR", pickup: { branch: "Test", address: "Kandy", readyDate: "2026-11-10" }, latestPaymentAttempt: null });
+    const getStatus = vi.spyOn(PaymentService, "getStatus").mockResolvedValueOnce({ orderNumber: "WB-test", orderStatus: "PAYMENT_PENDING", paymentStatus: "PENDING", isTest: true, paymentReviewRequired: false, paymentUnavailableReason: null, total: "6500", currency: "LKR", pickup: { branch: "Test", address: "Kandy", readyDate: "2026-11-10" }, latestPaymentAttempt: null });
     const access = { orderNumber: "WB-test", accessToken: "browser_test_fixture" };
     const response = await status(request("status", JSON.stringify(access)));
     expect(response.status).toBe(200); expect(response.headers.get("cache-control")).toBe("no-store");
     expect(getStatus).toHaveBeenCalledWith(access); expect(await response.text()).not.toContain(access.accessToken);
   });
+});
+
+it("rejects cross-origin payment creation before service execution", async () => {
+  const response = await create(request("create", JSON.stringify({ orderNumber: "WB-test", accessToken: "token" }), { Origin: "https://attacker.example" }));
+  expect(response.status).toBe(403); expect(boundary.createCheckout).not.toHaveBeenCalled();
+});
+it("rejects oversized raw webhook bodies before verification", async () => {
+  const response = await webhook(request("webhook", "x".repeat(17000)));
+  expect(response.status).toBe(413); expect(boundary.processWebhook).not.toHaveBeenCalled();
 });

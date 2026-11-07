@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma";
 import { ProductService } from "../lib/services/product-service";
 import { Prisma } from "@prisma/client";
 
-describe("ProductService.deleteProduct", () => {
+describe.skipIf(!process.env.SECURITY_TEST_DATABASE_URL)("ProductService.deleteProduct", () => {
   const reference = Date.now();
   const testSlug = `deletion-test-cake-${reference}`;
   const testCode = `TD${reference}`;

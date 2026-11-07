@@ -4,7 +4,7 @@ import { OrderService } from "../lib/services/order-service";
 import { getEarliestReadyDate } from "../lib/domain/date-rules";
 import { Prisma, CustomizationFieldType } from "@prisma/client";
 
-describe("OrderService Integration & Security Tests", () => {
+describe.skipIf(!process.env.SECURITY_TEST_DATABASE_URL)("OrderService Integration & Security Tests", () => {
   let testBranchId: string;
   let inactiveBranchId: string;
   let testProductId: string;
@@ -120,7 +120,7 @@ describe("OrderService Integration & Security Tests", () => {
       },
     });
 
-    expect(order.orderNumber).toMatch(/^WB-\d{8}-[A-Z0-9]{4}$/);
+    expect(order.orderNumber).toMatch(/^WB-\d{8}-[A-F0-9]{8}$/);
     expect(order.orderStatus).toBe("PAYMENT_PENDING");
     expect(order.paymentStatus).toBe("PENDING");
     expect(order.total.toFixed(2)).toBe("4000.00");
@@ -255,10 +255,10 @@ describe("OrderService Integration & Security Tests", () => {
     };
 
     // First call
-    const order1 = await OrderService.createPendingOrder(payload);
+    const order1 = await OrderService.createPendingOrder(payload, "a".repeat(64));
 
     // Second call with same idempotencyKey (e.g. double-click)
-    const order2 = await OrderService.createPendingOrder(payload);
+    const order2 = await OrderService.createPendingOrder(payload, "a".repeat(64));
 
     // Must return the exact same order without creating a second record
     expect(order1.id).toBe(order2.id);

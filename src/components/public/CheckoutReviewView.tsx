@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { PendingOrderState } from "./CheckoutOrderSummary";
 import { StoredCheckoutDetails, BranchData } from "./CheckoutDetailsForm";
+import { useBrowserStorage } from "@/lib/client/browser-storage";
 import { formatLKR } from "@/lib/domain/pricing";
 
 interface CheckoutReviewViewProps {
@@ -29,40 +30,19 @@ interface CheckoutReviewViewProps {
 export function CheckoutReviewView({ branches }: CheckoutReviewViewProps) {
   const router = useRouter();
 
-  const [order, setOrder] = useState<PendingOrderState | null>(null);
-  const [details, setDetails] = useState<StoredCheckoutDetails | null>(null);
-  const [idempotencyKey, setIdempotencyKey] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+  const { value: storedOrder, isLoading: orderLoading } = useBrowserStorage<PendingOrderState>("wasana_pending_order");
+  const { value: storedDetails, isLoading: detailsLoading } = useBrowserStorage<StoredCheckoutDetails>("wasana_checkout_details");
+  const isLoading = orderLoading || detailsLoading;
+  // Retain the review while successful submission clears storage and starts payment.
+  const [review, setReview] = useState<{ order: PendingOrderState | null; details: StoredCheckoutDetails | null } | null>(null);
+  if (!isLoading && !review) setReview({ order: storedOrder, details: storedDetails });
+  const order = review?.order ?? storedOrder;
+  const details = review?.details ?? storedDetails;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitLock = useRef(false);
   const [phase, setPhase] = useState("Creating your order…");
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const storedOrder = sessionStorage.getItem("wasana_pending_order");
-        const storedDetails = sessionStorage.getItem("wasana_checkout_details");
-
-        if (storedOrder) setOrder(JSON.parse(storedOrder));
-        if (storedDetails) setDetails(JSON.parse(storedDetails));
-
-        // Generate client-side idempotency key for this checkout attempt
-        const existingKey = sessionStorage.getItem("wasana_idempotency_key");
-        if (existingKey) {
-          setIdempotencyKey(existingKey);
-        } else {
-          const newKey = `idem_${crypto.randomUUID()}`;
-          sessionStorage.setItem("wasana_idempotency_key", newKey);
-          setIdempotencyKey(newKey);
-        }
-      } catch (err) {
-        console.error("Error reading checkout review state:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  }, []);
 
   if (isLoading) {
     return (
@@ -130,6 +110,11 @@ export function CheckoutReviewView({ branches }: CheckoutReviewViewProps) {
     let activeOrder: { orderNumber: string; accessToken: string } | null = null;
 
     try {
+      // Create the key on submission and persist it before any request, including retries.
+      const idempotencyKey = sessionStorage.getItem("wasana_idempotency_key") || `idem_${crypto.randomUUID()}`;
+      sessionStorage.setItem("wasana_idempotency_key", idempotencyKey);
+      const sessionResponse = await fetch("/api/orders", { cache: "no-store" });
+      if (!sessionResponse.ok) throw new Error(orderError);
       const payload = {
         customerName: details.customerName,
         customerEmail: details.customerEmail,

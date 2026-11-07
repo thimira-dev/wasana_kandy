@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full ${jakarta.variable}`}
+      className={`h-full ${jakarta.variable} ${playfair.variable} ${dancing.variable}`}
     >
       <body className="min-h-full flex flex-col bg-[#FAF7F2] text-[#3D2B24] antialiased font-jakarta">
         <PageLoader />

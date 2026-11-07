@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma";
 import { CategoryService } from "../lib/services/category-service";
 import { Prisma } from "@prisma/client";
 
-describe("CategoryService", () => {
+describe.skipIf(!process.env.SECURITY_TEST_DATABASE_URL)("CategoryService", () => {
   const reference = Date.now().toString();
   const testCategoryName = `CatSvc Ref ${reference}`;
 

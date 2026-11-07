@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -9,6 +10,8 @@ import {
   getStorageProvider,
   resetStorageProvider,
 } from "@/lib/storage";
+
+const imageFixture = (format: "jpeg" | "png" = "jpeg") => sharp({ create: { width: 2, height: 2, channels: 3, background: "#ff0000" } }).toFormat(format).toBuffer();
 
 describe("Storage Validation", () => {
   it("allows valid image types under 5MB", () => {
@@ -52,10 +55,10 @@ describe("LocalStorageProvider", () => {
 
   it("uploads buffer to local public uploads and returns path", async () => {
     const provider = new LocalStorageProvider();
-    const testBuffer = Buffer.from("test-image-content");
+    const testBuffer = await imageFixture();
     const url = await provider.upload(testBuffer, "test-cake.jpg", "image/jpeg");
 
-    expect(url).toMatch(/^\/uploads\/test-cake-\d+-[a-z0-9]+\.jpg$/);
+    expect(url).toMatch(/^\/uploads\/test-cake-\d+-[a-z0-9]+\.webp$/);
 
     // Clean up
     await provider.delete(url);
@@ -128,15 +131,15 @@ describe("SupabaseStorageProvider", () => {
       client: mockClient,
     });
 
-    const buffer = Buffer.from("fake-cake-image");
+    const buffer = await imageFixture("png");
     const resultUrl = await provider.upload(buffer, "Delicious Cake.png", "image/png");
 
     expect(mockClient.storage.from).toHaveBeenCalledWith("cake-images");
     expect(mockUpload).toHaveBeenCalledWith(
-      expect.stringMatching(/^delicious-cake-\d+-[a-z0-9]+\.png$/),
-      buffer,
+      expect.stringMatching(/^delicious-cake-\d+-[a-z0-9]+\.webp$/),
+      expect.any(Buffer),
       {
-        contentType: "image/png",
+        contentType: "image/webp",
         upsert: false,
       }
     );
@@ -163,7 +166,7 @@ describe("SupabaseStorageProvider", () => {
       client: mockClient,
     });
 
-    const buffer = Buffer.from("fake-cake-image");
+    const buffer = await imageFixture();
     await expect(provider.upload(buffer, "cake.jpg", "image/jpeg")).rejects.toThrow(
       "Supabase Storage upload failed: Bucket not found"
     );
@@ -265,4 +268,23 @@ describe("Environment-driven getStorageProvider() Factory", () => {
     const provider = getStorageProvider();
     expect(provider).toBeInstanceOf(SupabaseStorageProvider);
   });
+});
+
+describe("Image content security", () => {
+  it("rejects disguised HTML and SVG before writing", async () => {
+    const provider = new LocalStorageProvider();
+    for (const input of ["<html><script>alert(1)</script></html>", '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>']) {
+      await expect(provider.upload(Buffer.from(input), "cake.jpg", "image/jpeg")).rejects.toThrow("valid, non-animated");
+    }
+  });
+  it("rejects MIME spoofing even when the bytes are a valid image", async () => {
+    await expect(new LocalStorageProvider().upload(await imageFixture("png"), "cake.jpg", "image/jpeg")).rejects.toThrow("valid, non-animated");
+  });
+  it("re-encodes safe content and replaces attacker-controlled extensions", async () => {
+    const provider = new LocalStorageProvider();
+    const url = await provider.upload(await imageFixture(), "cake.html", "image/jpeg");
+    try { expect(url).toMatch(/cake-.*\.webp$/); }
+    finally { await provider.delete(url); }
+  });
+  it("rejects empty uploads", () => expect(validateStorageFile(0, "image/jpeg").valid).toBe(false));
 });

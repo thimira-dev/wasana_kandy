@@ -1,3 +1,4 @@
+import { readJson, securityErrorResponse } from "@/lib/security/requests";
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth/session";
 import { Permissions } from "@/lib/auth/roles";
@@ -14,6 +15,8 @@ export async function GET() {
     const categories = await CategoryService.getCategoriesWithProductCounts();
     return NextResponse.json({ categories });
   } catch (error) {
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
     console.error("Fetch categories error:", error);
     return NextResponse.json(
       { error: "Failed to fetch categories" },
@@ -29,11 +32,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await readJson(request);
     const category = await CategoryService.createCategory(body);
 
     return NextResponse.json({ success: true, category }, { status: 201 });
   } catch (error) {
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
     console.error("Create category error:", error);
     if (error instanceof ZodError) {
       return NextResponse.json(

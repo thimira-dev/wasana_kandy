@@ -1,3 +1,5 @@
+import { assertSameOrigin, readJson, securityErrorResponse } from "@/lib/security/requests";
+import { clientAddress, enforceRateLimit } from "@/lib/security/rate-limit";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
@@ -6,7 +8,9 @@ import { createSessionToken, setAdminSessionCookie } from "@/lib/auth/session";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    assertSameOrigin(request);
+    await enforceRateLimit("login-ip", clientAddress(request), 30, 900);
+    const body = await readJson(request, 4096);
     const validated = adminLoginSchema.safeParse(body);
 
     if (!validated.success) {
@@ -17,6 +21,7 @@ export async function POST(request: Request) {
     }
 
     const { email, password } = validated.data;
+    await enforceRateLimit("login-account", email, 10, 900);
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -49,7 +54,7 @@ export async function POST(request: Request) {
       email: user.email,
       name: user.name,
       role: user.role,
-    });
+    }, user);
 
     const response = NextResponse.json({
       success: true,
@@ -59,12 +64,14 @@ export async function POST(request: Request) {
         name: user.name,
         role: user.role,
       },
-    });
+    }, { headers: { "Cache-Control": "no-store" } });
 
     setAdminSessionCookie(response, token);
     return response;
   } catch (error) {
-    console.error("Login API error:", error);
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
+    console.error("Login could not be completed");
     return NextResponse.json(
       { error: "An unexpected error occurred during login" },
       { status: 500 }

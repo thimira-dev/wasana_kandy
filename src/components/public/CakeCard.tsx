@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Heart, ShoppingBag } from "lucide-react";
 import { formatLKR } from "@/lib/domain/pricing";
 import { getProductDisplayName } from "@/lib/domain/catalogue";
@@ -21,32 +20,7 @@ export interface CakeCardProps {
   isSeasonal?: boolean;
 }
 
-function getBadge(
-  isSeasonal: boolean | undefined,
-  mainCategory: string | null | undefined,
-  catalogueCode: string | null | undefined,
-  name: string
-): { label: string; isRuby: boolean } | null {
-  if (isSeasonal) return { label: "Seasonal", isRuby: true };
-
-  const cat = (mainCategory || "").toLowerCase();
-  if (cat.includes("wedding"))     return { label: "Bespoke",     isRuby: true };
-  if (cat.includes("birthday"))    return { label: "Popular",     isRuby: false };
-  if (cat.includes("mini"))        return { label: "Miniature",   isRuby: false };
-  if (cat.includes("printed"))     return { label: "Custom Print", isRuby: false };
-  if (cat.includes("special"))     return { label: "Artisanal",   isRuby: true };
-
-  const seed = (catalogueCode || "") + name;
-  const n = seed.charCodeAt(0) + (seed.charCodeAt(1) || 0);
-  if (n % 4 === 3) return null;
-  
-  return n % 2 === 0
-    ? { label: "Best Seller", isRuby: true }
-    : { label: "Fresh Daily", isRuby: false };
-}
-
 export function CakeCard({
-  id,
   name,
   slug,
   basePrice,
@@ -54,44 +28,13 @@ export function CakeCard({
   imageUrl,
   altText,
   catalogueCode,
-  mainCategory,
-  isSeasonal,
 }: CakeCardProps) {
-  const router = useRouter();
   const [isSaved, setIsSaved] = useState(false);
 
   const displayName = getProductDisplayName({ name, catalogueCode });
-  const badge = getBadge(isSeasonal, mainCategory, catalogueCode, name);
 
   const numPrice = typeof basePrice === "number" ? basePrice : parseFloat(basePrice) || 0;
 
-  const handleBuy = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const orderPayload = {
-      productId: id,
-      productName: name,
-      productSlug: slug,
-      productImage: imageUrl || "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800",
-      basePrice: numPrice,
-      totalPriceFormatted: formatLKR(numPrice),
-      totalCents: Math.round(numPrice * 100),
-      selections: {},
-      customizationSummary: [],
-      timestamp: Date.now(),
-    };
-
-    if (typeof window !== "undefined") {
-      try {
-        sessionStorage.setItem("wasana_pending_order", JSON.stringify(orderPayload));
-      } catch (err) {
-        console.error("Failed to set order payload in sessionStorage:", err);
-      }
-    }
-
-    router.push("/checkout/details");
-  };
 
   return (
     <article className="group glass-card flex flex-col h-full overflow-hidden">

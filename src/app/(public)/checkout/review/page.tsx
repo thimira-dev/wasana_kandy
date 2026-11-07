@@ -27,6 +27,9 @@ export default async function CheckoutReviewPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        {process.env.PAYMENT_PROVIDER !== "payhere" && (
+          <p role="note" className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Test checkout: no real money is collected. Orders placed here are simulations.</p>
+        )}
         <CheckoutReviewView branches={formattedBranches} />
       </div>
     </div>

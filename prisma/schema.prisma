@@ -45,8 +45,30 @@ model User {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  sessions     AdminSession[]
 
   @@map("users")
+}
+
+model AdminSession {
+  id          String   @id
+  userId      String
+  userVersion String
+  expiresAt   DateTime
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([userId])
+  @@map("admin_sessions")
+}
+
+model RequestRateLimit {
+  id        String   @id
+  count     Int
+  expiresAt DateTime
+
+  @@index([expiresAt])
+  @@map("request_rate_limits")
 }
 
 model Branch {
@@ -174,6 +196,10 @@ model Order {
   id                 String             @id @default(cuid())
   orderNumber        String             @unique
   idempotencyKey     String?            @unique
+  checkoutOwnerHash  String?
+  requestFingerprint String?
+  isTest             Boolean            @default(true)
+  paymentReviewRequired Boolean          @default(false)
   accessToken        String             @unique @default(cuid())
   branchId           String
   customerName       String

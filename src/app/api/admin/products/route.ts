@@ -1,3 +1,4 @@
+import { readJson, securityErrorResponse } from "@/lib/security/requests";
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth/session";
 import { Permissions } from "@/lib/auth/roles";
@@ -18,6 +19,8 @@ export async function GET(request: Request) {
     const products = await ProductService.getAdminProducts(search, collection);
     return NextResponse.json({ products });
   } catch (error) {
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
     console.error("Fetch products error:", error);
     return NextResponse.json(
       { error: "Failed to fetch products" },
@@ -33,11 +36,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await readJson(request);
     const product = await ProductService.createProduct(body);
 
     return NextResponse.json({ success: true, product }, { status: 201 });
   } catch (error) {
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
     console.error("Create product error:", error);
     if (error instanceof ZodError) {
       return NextResponse.json(

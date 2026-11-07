@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma";
 import { CollectionService } from "../lib/services/collection-service";
 import { Prisma } from "@prisma/client";
 
-describe("CollectionService", () => {
+describe.skipIf(!process.env.SECURITY_TEST_DATABASE_URL)("CollectionService", () => {
   const reference = Date.now().toString();
   // Codes must be letters only (same constraint as the real catalogue codes)
   const testCode = `TQ${"ABCDEFGHJKLMNPQRSTUVWXYZ"[Number(reference) % 23]}`;

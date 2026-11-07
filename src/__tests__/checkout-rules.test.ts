@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  getSriLankaDateParts,
   getSriLankaDateString,
   getEarliestReadyDate,
   validateReadyDate,
@@ -127,4 +126,9 @@ describe("Customer Details Schema Validation", () => {
     const parsed = checkoutDetailsSchema.safeParse(invalidDate);
     expect(parsed.success).toBe(false);
   });
+});
+
+it("rejects nonexistent calendar dates", () => {
+  expect(validateReadyDate("2099-02-30").isValid).toBe(false);
+  expect(validateReadyDate("2099-13-01").isValid).toBe(false);
 });

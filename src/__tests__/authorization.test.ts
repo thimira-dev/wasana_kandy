@@ -1,6 +1,23 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Permissions, Role } from "../lib/auth/roles";
-import { createSessionToken, verifySessionToken } from "../lib/auth/session";
+import { createSessionToken, verifySessionToken, revokeAdminSession } from "../lib/auth/session";
+
+const state = vi.hoisted(() => ({ user: { id: "user-123", email: "manager@wasanabakers.lk", name: "Bakery Manager", role: "PRODUCT_MANAGER", isActive: true, passwordHash: "fixture-hash", updatedAt: new Date("2026-01-01") }, sessions: new Map<string, Record<string, unknown>>(), token: "" }));
+vi.mock("@/lib/prisma", () => ({ prisma: {
+  user: { findUnique: vi.fn(async () => state.user) },
+  adminSession: {
+    create: vi.fn(async ({ data }) => { state.sessions.set(data.id, data); return data; }),
+    findUnique: vi.fn(async ({ where }) => { const s = state.sessions.get(where.id); return s ? { ...s, user: state.user } : null; }),
+    deleteMany: vi.fn(async ({ where }) => { state.sessions.delete(where.id); return { count: 1 }; }),
+  },
+} }));
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => ({ value: state.token }) }) }));
+beforeEach(() => {
+  vi.stubEnv("AUTH_SECRET", "test_fixture_random_auth_secret_0123456789");
+  state.user.isActive = true; state.user.role = "PRODUCT_MANAGER"; state.user.passwordHash = "fixture-hash";
+  state.user.updatedAt = new Date("2026-01-01"); state.sessions.clear(); state.token = "";
+});
+afterEach(() => vi.unstubAllEnvs());
 
 describe("Admin Authorization Matrix", () => {
   it("grants product management access to SUPER_ADMIN and PRODUCT_MANAGER", () => {
@@ -44,4 +61,19 @@ describe("Admin Session JWT Tokens", () => {
     const verified = await verifySessionToken("invalid-malformed-token");
     expect(verified).toBeNull();
   });
+});
+
+it("rejects absent and placeholder signing keys without issuing a token", async () => {
+  vi.stubEnv("AUTH_SECRET", ""); vi.stubEnv("JWT_SECRET", "");
+  await expect(createSessionToken(state.user as Parameters<typeof createSessionToken>[0])).rejects.toThrow("AUTH_SECRET");
+  vi.stubEnv("AUTH_SECRET", "your-secure-auth-secret-min-32-chars-long");
+  await expect(createSessionToken(state.user as Parameters<typeof createSessionToken>[0])).rejects.toThrow("AUTH_SECRET");
+});
+it.each(["disabled", "role changed", "password changed", "revoked"])("rejects an existing session when %s", async condition => {
+  const token = await createSessionToken(state.user as Parameters<typeof createSessionToken>[0]);
+  if (condition === "disabled") state.user.isActive = false;
+  if (condition === "role changed") { state.user.role = "SUPER_ADMIN"; state.user.updatedAt = new Date("2026-01-02"); }
+  if (condition === "password changed") state.user.passwordHash = "new-hash";
+  if (condition === "revoked") { state.token = token; await revokeAdminSession(); }
+  expect(await verifySessionToken(token)).toBeNull();
 });

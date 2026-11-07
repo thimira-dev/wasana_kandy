@@ -8,7 +8,7 @@ import { Prisma } from "@prisma/client";
  * Integration tests for the view-only admin orders dashboard queries.
  * Creates isolated branch/product fixtures with unique codes and cleans up in afterAll.
  */
-describe("OrderService admin dashboard queries", () => {
+describe.skipIf(!process.env.SECURITY_TEST_DATABASE_URL)("OrderService admin dashboard queries", () => {
   let testBranchId: string;
   let otherBranchId: string;
   let testProductId: string;
@@ -59,6 +59,7 @@ describe("OrderService admin dashboard queries", () => {
     await prisma.order.update({
       where: { id: paidOrderId },
       data: {
+        isTest: false,
         orderStatus: "CONFIRMED",
         paymentStatus: "PAID",
         paidAt: new Date(),

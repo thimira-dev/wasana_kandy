@@ -83,7 +83,7 @@ describe("Catalogue Domain Unit Tests", () => {
   });
 });
 
-describe("ProductService Catalogue Search, Filtering & Code Validation", () => {
+describe.skipIf(!process.env.SECURITY_TEST_DATABASE_URL)("ProductService Catalogue Search, Filtering & Code Validation", () => {
   const createdProductIds: string[] = [];
 
   beforeAll(async () => {
@@ -95,6 +95,17 @@ describe("ProductService Catalogue Search, Filtering & Code Validation", () => {
         },
       },
     });
+
+    // This suite must also work on an empty disposable database without running the application seed.
+    const existing = await prisma.product.findUnique({ where: { catalogueCode: "G-43" } });
+    if (!existing) {
+      const fixture = await prisma.product.create({ data: {
+        name: "Code Search Fixture", slug: `code-search-fixture-${Date.now()}`,
+        collectionCode: "G", designNumber: 43, catalogueCode: "G-43", description: "Search fixture",
+        basePrice: new Prisma.Decimal("3500"), published: true, isActive: true,
+      } });
+      createdProductIds.push(fixture.id);
+    }
 
     // Create 3 test products for integration tests
     const p1 = await prisma.product.create({

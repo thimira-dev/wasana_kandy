@@ -130,6 +130,12 @@ describe("payment configuration", () => {
     delete (process.env as Record<string, string | undefined>).PAYMENT_SIMULATION_SECRET;
     expect(getPaymentConfig().simulationSecret.length).toBeGreaterThanOrEqual(32);
   });
+  it("disables production simulation unless staging explicitly opts in", () => {
+    setupSimulation({ NODE_ENV: "production", PAYMENT_ALLOW_SIMULATION: "" });
+    expect(getPaymentConfig).toThrow("Simulation checkout is disabled");
+    vi.stubEnv("PAYMENT_ALLOW_SIMULATION", "true");
+    expect(getPaymentConfig().provider).toBe("simulation");
+  });
   it("rejects missing configuration in production", () => {
     setupSimulation({ NODE_ENV: "production", PAYMENT_SIMULATION_SECRET: "" });
     expect(getPaymentConfig).toThrow();
@@ -148,4 +154,11 @@ describe("payment configuration", () => {
     setupSimulation({ NODE_ENV: "production", APP_URL: "http://localhost:3000" });
     expect(getPaymentConfig).toThrow();
   });
+});
+
+it("reuses checkout identity and expiration across provider instances for a persisted attempt", async () => {
+  const input = { amountCents: 650000, reference: "WB-EXAMPLE", description: "Cake", customer: { name: "Test", email: "test@example.com", phone: "+94771234567" },
+    successUrl: `${appUrl}/checkout/payment`, cancelUrl: `${appUrl}/checkout/payment`, expiresAt: new Date(Date.now() + 3600000).toISOString() };
+  expect(await provider().createCheckout(input, "same-attempt")).toEqual(await provider().createCheckout(input, "same-attempt"));
+  expect((await provider().createCheckout(input, "different-attempt")).id).not.toBe((await provider().createCheckout(input, "same-attempt")).id);
 });

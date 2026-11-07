@@ -1,3 +1,4 @@
+import { readJson, securityErrorResponse } from "@/lib/security/requests";
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth/session";
 import { Permissions } from "@/lib/auth/roles";
@@ -23,6 +24,8 @@ export async function GET(request: Request, context: RouteContext) {
 
     return NextResponse.json({ product });
   } catch (error) {
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
     console.error("Get product error:", error);
     return NextResponse.json(
       { error: "Failed to fetch product" },
@@ -39,11 +42,13 @@ export async function PUT(request: Request, context: RouteContext) {
     }
 
     const { id } = await context.params;
-    const body = await request.json();
+    const body = await readJson(request);
     const product = await ProductService.updateProduct(id, body);
 
     return NextResponse.json({ success: true, product });
   } catch (error) {
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
     console.error("Update product error:", error);
     if (error instanceof ZodError) {
       return NextResponse.json(
@@ -66,8 +71,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const { id } = await context.params;
-    const body = await request.json();
-    const { published, isActive } = body;
+    const body = await readJson(request);
+    if (!body || typeof body !== "object" || Array.isArray(body)) return NextResponse.json({ error: "Invalid status update" }, { status: 400 });
+    const { published, isActive } = body as { published?: unknown; isActive?: unknown };
 
     const updated = await ProductService.toggleStatus(id, {
       ...(typeof published === "boolean" ? { published } : {}),
@@ -76,6 +82,8 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return NextResponse.json({ success: true, product: updated });
   } catch (error) {
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
     console.error("Patch product error:", error);
     return NextResponse.json(
       { error: "Failed to update product status" },
@@ -100,6 +108,8 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     return NextResponse.json({ success: true, deleted });
   } catch (error) {
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
     console.error("Delete product error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to delete product" },

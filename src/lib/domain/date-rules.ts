@@ -67,6 +67,11 @@ export function validateReadyDate(
     };
   }
 
+  const parsedDate = new Date(`${candidateDateString}T00:00:00.000Z`);
+  if (!Number.isFinite(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== candidateDateString) {
+    return { isValid: false, error: "Please select a valid calendar date.", earliestDate };
+  }
+
   // String comparison on ISO format (YYYY-MM-DD) is lexicographically correct for chronological order
   if (candidateDateString < earliestDate) {
     return {

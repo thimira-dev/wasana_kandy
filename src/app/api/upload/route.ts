@@ -1,3 +1,5 @@
+import { readForm, securityErrorResponse } from "@/lib/security/requests";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth/session";
 import { Permissions } from "@/lib/auth/roles";
@@ -10,10 +12,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const formData = await request.formData();
+    await enforceRateLimit("admin-upload", session.id, 30, 60);
+    const formData = await readForm(request, 6 * 1024 * 1024);
     const file = formData.get("file") as File | null;
 
-    if (!file) {
+    if (!(file instanceof File)) {
       return NextResponse.json({ error: "No image file provided" }, { status: 400 });
     }
 
@@ -33,9 +36,11 @@ export async function POST(request: Request) {
       url: publicUrl,
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    const denied = securityErrorResponse(error);
+    if (denied) return denied;
+    console.error("Image upload could not be completed");
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to upload image" },
+      { error: "Failed to upload image. Please use a valid JPEG, PNG, WebP, or AVIF image." },
       { status: 500 }
     );
   }

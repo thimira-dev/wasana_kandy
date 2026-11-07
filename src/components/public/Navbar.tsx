@@ -11,7 +11,6 @@ import {
   Phone,
   Clock,
   ChevronDown,
-  LogIn,
   ChevronRight,
   Menu,
 } from "lucide-react";
@@ -51,12 +50,14 @@ export function Navbar({ categoryNames }: NavbarProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
+  const [previousPathname, setPreviousPathname] = useState(pathname);
+  if (previousPathname !== pathname) {
+    setPreviousPathname(pathname);
     setSearchOpen(false);
     setCatOpen(false);
     setBranchOpen(false);
     setMobileMenuOpen(false);
-  }, [pathname]);
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
