@@ -1,4 +1,5 @@
 import { ProductService } from "@/lib/services/product-service";
+import { CollectionService } from "@/lib/services/collection-service";
 import { ProductTable } from "@/components/admin/ProductTable";
 import { getAdminSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
@@ -23,7 +24,10 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
   }
 
   const params = searchParams ? await searchParams : {};
-  const products = await ProductService.getAdminProducts(params.search, params.collection);
+  const [products, collections] = await Promise.all([
+    ProductService.getAdminProducts(params.search, params.collection),
+    CollectionService.listActiveCollections(),
+  ]);
 
   const formattedProducts = products.map((p) => ({
     id: p.id,
@@ -49,7 +53,14 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
 
   return (
     <div className="space-y-6">
-      <ProductTable initialProducts={formattedProducts} />
+      <ProductTable
+        initialProducts={formattedProducts}
+        collections={collections.map((c) => ({
+          code: c.code,
+          name: c.name,
+          isSeasonal: c.isSeasonal,
+        }))}
+      />
     </div>
   );
 }

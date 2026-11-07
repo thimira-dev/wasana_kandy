@@ -3,7 +3,6 @@ import { getAdminSession } from "@/lib/auth/session";
 import { Permissions } from "@/lib/auth/roles";
 import { ProductService } from "@/lib/services/product-service";
 import { ZodError } from "zod";
-
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
@@ -81,6 +80,30 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json(
       { error: "Failed to update product status" },
       { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request, context: RouteContext) {
+  try {
+    const session = await getAdminSession();
+    if (!session || !Permissions.canManageProducts(session.role)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await context.params;
+    const deleted = await ProductService.deleteProduct(id);
+
+    if (!deleted) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, deleted });
+  } catch (error) {
+    console.error("Delete product error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to delete product" },
+      { status: 400 }
     );
   }
 }

@@ -1,14 +1,15 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { ProductService } from "@/lib/services/product-service";
-import { CakeCard } from "@/components/public/CakeCard";
 import { CategoryCakeGrid } from "@/components/public/CategoryCakeGrid";
 import { CatalogueFilterBar } from "@/components/public/CatalogueFilterBar";
 import { HowToOrderBanner } from "@/components/public/HowToOrderBanner";
 import { CustomerFeedbackSection } from "@/components/public/CustomerFeedbackSection";
 import { AteliersMapSection } from "@/components/public/AteliersMapSection";
 import { Cake, RotateCcw } from "lucide-react";
-import { MAIN_CATEGORIES } from "@/lib/domain/catalogue";
+import { CategoryService } from "@/lib/services/category-service";
+import { CollectionService } from "@/lib/services/collection-service";
+import { DEFAULT_CATEGORIES } from "@/lib/domain/catalogue";
 import type { CakeCardProps } from "@/components/public/CakeCard";
 
 export const revalidate = 0;
@@ -35,12 +36,16 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
   const collection = params.collection || "";
   const sort       = params.sort       || "newest";
 
-  const allCakes = await ProductService.getPublishedProducts({
-    search,
-    category,
-    collection,
-    sort,
-  });
+  const [allCakes, categories, collections] = await Promise.all([
+    ProductService.getPublishedProducts({
+      search,
+      category,
+      collection,
+      sort,
+    }),
+    CategoryService.listActiveCategories(),
+    CollectionService.listActiveCollections(),
+  ]);
 
   const totalCakes = allCakes.length;
 
@@ -48,7 +53,7 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
     search.trim() || category.trim() || collection.trim() || (sort && sort !== "newest")
   );
 
-  /* ── Group cakes by mainCategory (preserve MAIN_CATEGORIES order) ── */
+  /* ── Group cakes by mainCategory (preserve managed category order) ── */
   const categoryMap = new Map<string, CakeCardProps[]>();
 
   for (const cake of allCakes) {
@@ -72,9 +77,12 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
     categoryMap.get(cat)!.push(cardProps);
   }
 
-  /* Order categories: known categories first (in defined order), then any extras */
+  /* Order categories: managed categories first (in their sort order), then any extras */
+  const managedCategoryNames = categories.length
+    ? categories.map((c) => c.name)
+    : DEFAULT_CATEGORIES;
   const orderedCategories: string[] = [];
-  for (const knownCat of MAIN_CATEGORIES) {
+  for (const knownCat of managedCategoryNames) {
     if (categoryMap.has(knownCat)) {
       orderedCategories.push(knownCat);
     }
@@ -100,6 +108,14 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
                 currentCategory={category}
                 currentCollection={collection}
                 currentSort={sort}
+                categoryNames={
+                  categories.length ? categories.map((c) => c.name) : undefined
+                }
+                collections={
+                  collections.length
+                    ? collections.map((c) => ({ code: c.code, name: c.name }))
+                    : undefined
+                }
               />
             </Suspense>
           </div>

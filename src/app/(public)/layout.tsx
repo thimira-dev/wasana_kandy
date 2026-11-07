@@ -3,16 +3,30 @@ import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { HELP_BUTTON } from "@/content/placeholders";
 import { Phone } from "lucide-react";
+import { CategoryService } from "@/lib/services/category-service";
+import { DEFAULT_CATEGORIES } from "@/lib/domain/catalogue";
 
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Managed categories load fresh each request so admin edits show up immediately
+  let categoryNames: string[];
+  try {
+    const dbCategories = await CategoryService.listActiveCategories();
+    categoryNames = dbCategories.length
+      ? dbCategories.map((c) => c.name)
+      : [...DEFAULT_CATEGORIES];
+  } catch (err) {
+    console.error("Failed to load categories for navigation:", err);
+    categoryNames = [...DEFAULT_CATEGORIES];
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-[#FAF9F5]">
       <Suspense fallback={null}>
-        <Navbar />
+        <Navbar categoryNames={categoryNames} />
       </Suspense>
       <main className="flex-1">{children}</main>
       <Footer />

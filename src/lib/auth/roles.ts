@@ -25,4 +25,7 @@ export const Permissions = {
   canViewReports: (role?: Role | null): boolean => {
     return role === "SUPER_ADMIN";
   },
+  canViewOrders: (role?: Role | null): boolean => {
+    return role === "SUPER_ADMIN" || role === "PRODUCT_MANAGER";
+  },
 };

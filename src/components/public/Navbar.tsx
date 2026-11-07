@@ -15,7 +15,7 @@ import {
   ChevronRight,
   Menu,
 } from "lucide-react";
-import { MAIN_CATEGORIES } from "@/lib/domain/catalogue";
+import { DEFAULT_CATEGORIES } from "@/lib/domain/catalogue";
 
 const BRANCHES = [
   { id: "main", name: "Kandy City Centre (Dalada Veediya)", area: "Kandy City" },
@@ -23,7 +23,15 @@ const BRANCHES = [
   { id: "peradeniya", name: "Peradeniya Branch", area: "Peradeniya" },
 ];
 
-export function Navbar() {
+export interface NavbarProps {
+  categoryNames?: string[];
+}
+
+export function Navbar({ categoryNames }: NavbarProps) {
+  // Managed categories live in the database; fall back to defaults when not supplied
+  const categories = categoryNames?.length
+    ? categoryNames
+    : DEFAULT_CATEGORIES;
   const router        = useRouter();
   const pathname      = usePathname();
   const searchParams  = useSearchParams();
@@ -159,7 +167,7 @@ export function Navbar() {
                       <ChevronRight className="w-4 h-4" aria-hidden="true" />
                     </Link>
                     <div className="py-1.5 space-y-0.5">
-                      {MAIN_CATEGORIES.map((cat) => (
+                      {categories.map((cat) => (
                         <button
                           key={cat}
                           type="button"
@@ -355,7 +363,7 @@ export function Navbar() {
                   <p className="px-3.5 text-[10px] font-extrabold uppercase tracking-wider text-[#855300] mb-1">
                     Categories
                   </p>
-                  {MAIN_CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <button
                       key={cat}
                       type="button"

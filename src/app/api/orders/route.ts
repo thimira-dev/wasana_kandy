@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { OrderService } from "@/lib/services/order-service";
+import { OrderService, OrderValidationError } from "@/lib/services/order-service";
 import { formatLKR } from "@/lib/domain/pricing";
 import { ZodError } from "zod";
 
@@ -24,10 +24,10 @@ export async function POST(request: Request) {
           branchName: order.branch?.name,
         },
       },
-      { status: 201 }
+      { status: 201, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
-    console.error("Order creation error:", error);
+    console.error("Order creation could not be completed");
 
     if (error instanceof ZodError) {
       const fieldErrors = error.flatten().fieldErrors;
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create order" },
+      { error: error instanceof OrderValidationError ? error.message : "Unable to create your order. Please try again." },
       { status: 400 }
     );
   }

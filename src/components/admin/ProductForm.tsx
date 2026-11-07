@@ -3,12 +3,24 @@
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, AlertCircle, CheckCircle2, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, AlertCircle, CheckCircle2, Sparkles, Tag } from "lucide-react";
 import { ImageUploader } from "./ImageUploader";
 import { CustomizationGroupEditor } from "./CustomizationGroupEditor";
 import { ProductInput, ProductImageInput, CustomizationGroupInput } from "@/lib/domain/validation";
 import { ProductService } from "@/lib/services/product-service";
-import { KNOWN_COLLECTIONS, MAIN_CATEGORIES, generateCatalogueCode } from "@/lib/domain/catalogue";
+import { generateCatalogueCode } from "@/lib/domain/catalogue";
+
+export interface FormCategoryOption {
+  id: string;
+  name: string;
+}
+
+export interface FormCollectionOption {
+  id: string;
+  code: string;
+  name: string;
+  isSeasonal: boolean;
+}
 
 interface ProductFormProps {
   initialData?: {
@@ -29,9 +41,11 @@ interface ProductFormProps {
     customizationGroups: CustomizationGroupInput[];
   };
   isEditing?: boolean;
+  categories: FormCategoryOption[];
+  collections: FormCollectionOption[];
 }
 
-export function ProductForm({ initialData, isEditing = false }: ProductFormProps) {
+export function ProductForm({ initialData, isEditing = false, categories, collections }: ProductFormProps) {
   const router = useRouter();
 
   const [name, setName] = useState(initialData?.name || "");
@@ -74,8 +88,8 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
 
   const handleCollectionChange = (val: string) => {
     setCollectionCode(val);
-    // Check if collection is seasonal
-    const matchedCol = KNOWN_COLLECTIONS.find((c) => c.code === val);
+    // Check if collection is marked seasonal
+    const matchedCol = collections.find((c) => c.code === val);
     if (matchedCol?.isSeasonal) {
       setIsSeasonal(true);
     }
@@ -219,18 +233,28 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* Main Category */}
           <div>
-            <label className="block text-xs font-bold text-stone-800 mb-1">
-              Main Cake Category
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-stone-800">
+                Main Cake Category
+              </label>
+              <Link
+                href="/admin/categories"
+                target="_blank"
+                className="inline-flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-800 font-medium"
+              >
+                <Tag className="w-3 h-3" />
+                Manage categories
+              </Link>
+            </div>
             <select
               value={mainCategory}
               onChange={(e) => setMainCategory(e.target.value)}
               className="w-full px-3.5 py-2.5 text-sm bg-white border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
             >
               <option value="">Select Main Category (Optional)</option>
-              {MAIN_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.name}>
+                  {cat.name}
                 </option>
               ))}
             </select>
@@ -250,11 +274,16 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
               className="w-full px-3.5 py-2.5 text-sm bg-white border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
             >
               <option value="">Select Collection (e.g. G, M, ND, S)</option>
-              {KNOWN_COLLECTIONS.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.displayName}
+              {collections.map((c) => (
+                <option key={c.id} value={c.code}>
+                  {c.code} — {c.name}
+                  {c.isSeasonal ? " (Seasonal)" : ""}
                 </option>
               ))}
+              {collectionCode &&
+                !collections.some((c) => c.code === collectionCode) && (
+                  <option value={collectionCode}>{collectionCode} (unavailable)</option>
+                )}
             </select>
             <p className="text-[11px] text-stone-400 mt-1">
               Collection letter code as printed in Wasana's physical catalogue.

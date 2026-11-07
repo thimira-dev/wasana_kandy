@@ -1,18 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
   User,
-  Mail,
-  Phone,
   Calendar,
   Store,
   MapPin,
   Edit2,
   Lock,
+  LoaderCircle,
   ArrowRight,
   AlertCircle,
   Sparkles,
@@ -35,6 +34,8 @@ export function CheckoutReviewView({ branches }: CheckoutReviewViewProps) {
   const [idempotencyKey, setIdempotencyKey] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLock = useRef(false);
+  const [phase, setPhase] = useState("Creating your order…");
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export function CheckoutReviewView({ branches }: CheckoutReviewViewProps) {
         if (existingKey) {
           setIdempotencyKey(existingKey);
         } else {
-          const newKey = `idem_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          const newKey = `idem_${crypto.randomUUID()}`;
           sessionStorage.setItem("wasana_idempotency_key", newKey);
           setIdempotencyKey(newKey);
         }
@@ -120,8 +121,13 @@ export function CheckoutReviewView({ branches }: CheckoutReviewViewProps) {
     ) || [];
 
   const handleProceedToPayment = async () => {
+    if (submitLock.current) return;
+    submitLock.current = true;
     setIsSubmitting(true);
+    setPhase("Creating your order…");
     setSubmitError(null);
+    const orderError = "Unable to create your order. Please check your details and try again.";
+    let activeOrder: { orderNumber: string; accessToken: string } | null = null;
 
     try {
       const payload = {
@@ -145,29 +151,38 @@ export function CheckoutReviewView({ branches }: CheckoutReviewViewProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to create order");
+        // Keep server details out of customer-facing payment messages.
+        throw new Error(orderError);
       }
 
-      // Clear temporary session storage items on successful order persistence
-      if (typeof window !== "undefined") {
-        try {
-          sessionStorage.removeItem("wasana_pending_order");
-          sessionStorage.removeItem("wasana_checkout_details");
-          sessionStorage.removeItem("wasana_idempotency_key");
-        } catch (e) {
-          console.error("Storage cleanup error:", e);
-        }
+      activeOrder = { orderNumber: data.order.orderNumber, accessToken: data.order.accessToken };
+      sessionStorage.setItem("wasana_active_order", JSON.stringify(activeOrder));
+      // The order is durable and recoverable through wasana_active_order now.
+      sessionStorage.removeItem("wasana_pending_order");
+      sessionStorage.removeItem("wasana_checkout_details");
+      sessionStorage.removeItem("wasana_idempotency_key");
+      setPhase("Preparing secure payment…");
+      const paymentResponse = await fetch("/api/payments/create", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(activeOrder),
+      });
+      const payment = await paymentResponse.json();
+      if (!paymentResponse.ok) throw new Error("Unable to start payment. Your order is saved.");
+      if (payment.alreadyPaid) {
+        router.push(`/checkout/payment?orderNumber=${encodeURIComponent(activeOrder.orderNumber)}`);
+      } else {
+        setPhase("Redirecting to secure checkout…");
+        window.location.assign(payment.checkoutUrl);
       }
-
-      // Navigate to payment placeholder with safe tokens
-      router.push(
-        `/checkout/payment?orderNumber=${encodeURIComponent(
-          data.order.orderNumber
-        )}&token=${encodeURIComponent(data.order.accessToken)}`
-      );
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "An error occurred while creating your order.");
+    } catch {
+      if (activeOrder) {
+        // Keep the persisted order and its access session; retries never create another order.
+        router.push(`/checkout/payment?orderNumber=${encodeURIComponent(activeOrder.orderNumber)}&result=start-failed`);
+        return;
+      }
+      setSubmitError(orderError);
       setIsSubmitting(false);
+      submitLock.current = false;
     }
   };
 
@@ -189,7 +204,7 @@ export function CheckoutReviewView({ branches }: CheckoutReviewViewProps) {
         <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-rose-800 text-sm">
           <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-rose-900">Order Creation Notice</p>
+            <p className="font-semibold text-rose-900">We couldn’t save your order</p>
             <p className="text-xs text-rose-700 mt-0.5">{submitError}</p>
           </div>
         </div>
@@ -368,7 +383,7 @@ export function CheckoutReviewView({ branches }: CheckoutReviewViewProps) {
         )}
 
         {/* Total Price Card */}
-        <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col sm:flex-row sm:flex-wrap items-center justify-between gap-4">
           <div>
             <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider block">
               Total Order Amount (LKR)
@@ -377,7 +392,7 @@ export function CheckoutReviewView({ branches }: CheckoutReviewViewProps) {
               {order.totalPriceFormatted}
             </span>
             <p className="text-[11px] text-stone-400 mt-0.5">
-              Includes base cake price + all selected options. Authoritative price will be verified on confirmation.
+              Includes your cake and all selected options.
             </p>
           </div>
 
@@ -385,12 +400,16 @@ export function CheckoutReviewView({ branches }: CheckoutReviewViewProps) {
             type="button"
             disabled={isSubmitting}
             onClick={handleProceedToPayment}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-bold rounded-xl bg-amber-600 text-white hover:bg-amber-700 active:scale-98 transition-all shadow-md hover:shadow-lg focus:ring-4 focus:ring-amber-200 cursor-pointer disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold rounded-xl bg-amber-700 text-white hover:bg-amber-800 active:scale-98 transition-all shadow-md hover:shadow-lg focus:ring-4 focus:ring-amber-200 cursor-pointer disabled:opacity-70"
           >
-            <Lock className="w-4 h-4" />
-            <span>{isSubmitting ? "Creating Order..." : "Proceed to Payment"}</span>
-            <ArrowRight className="w-5 h-5 ml-1" />
+            {isSubmitting ? <LoaderCircle aria-hidden="true" className="w-4 h-4 shrink-0 motion-safe:animate-spin" /> : <Lock aria-hidden="true" className="w-4 h-4 shrink-0" />}
+            <span>{isSubmitting ? "Opening secure checkout…" : "Proceed to Payment"}</span>
+            {!isSubmitting && <ArrowRight aria-hidden="true" className="w-5 h-5 ml-1 shrink-0" />}
           </button>
+        </div>
+        <div role="status" aria-live="polite" aria-atomic="true" className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 text-sm text-amber-900">
+          {isSubmitting && <p className="mb-1 font-semibold">{phase}</p>}
+          <p className="text-xs leading-relaxed">{isSubmitting ? "We’re opening checkout for this order. Please keep this tab open; your order won’t be duplicated." : "You’ll continue to the payment gateway to complete your purchase."}</p>
         </div>
       </div>
     </div>

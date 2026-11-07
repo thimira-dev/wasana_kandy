@@ -465,4 +465,42 @@ export class ProductService {
       data: updates,
     });
   }
+
+  /**
+   * Permanently deletes a cake together with its images and customization
+   * groups/options (both cascade). Past orders are preserved through their
+   * snapshot fields because order_items.product_id is set to NULL on delete.
+   */
+  static async deleteProduct(id: string) {
+    const existing = await prisma.product.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        catalogueCode: true,
+        _count: {
+          select: {
+            orderItems: true,
+          },
+        },
+      },
+    });
+
+    if (!existing) {
+      return null;
+    }
+
+    await prisma.product.delete({
+      where: { id },
+    });
+
+    return {
+      id: existing.id,
+      name: existing.name,
+      slug: existing.slug,
+      catalogueCode: existing.catalogueCode,
+      priorOrderCount: existing._count.orderItems,
+    };
+  }
 }

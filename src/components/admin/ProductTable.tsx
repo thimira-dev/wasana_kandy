@@ -3,9 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { formatLKR } from "@/lib/domain/pricing";
-import { KNOWN_COLLECTIONS, normalizeCodeSearch } from "@/lib/domain/catalogue";
+import { normalizeCodeSearch } from "@/lib/domain/catalogue";
 import { CakeImage } from "@/components/public/CakeImage";
-import { Plus, Search, Edit3, Eye, Check, X, Layers, Filter } from "lucide-react";
+import { DeleteProductModal } from "./DeleteProductModal";
+import { Plus, Search, Edit3, Eye, Check, X, Layers, Filter, Trash2 } from "lucide-react";
 
 export interface AdminProductRow {
   id: string;
@@ -26,15 +27,23 @@ export interface AdminProductRow {
   updatedAt: string | Date;
 }
 
-interface ProductTableProps {
-  initialProducts: AdminProductRow[];
+export interface AdminCollectionOption {
+  code: string;
+  name: string;
+  isSeasonal: boolean;
 }
 
-export function ProductTable({ initialProducts }: ProductTableProps) {
+interface ProductTableProps {
+  initialProducts: AdminProductRow[];
+  collections?: AdminCollectionOption[];
+}
+
+export function ProductTable({ initialProducts, collections = [] }: ProductTableProps) {
   const [products, setProducts] = useState<AdminProductRow[]>(initialProducts);
   const [search, setSearch] = useState("");
   const [collectionFilter, setCollectionFilter] = useState("all");
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminProductRow | null>(null);
 
   const filtered = products.filter((p) => {
     // Collection filter
@@ -148,11 +157,16 @@ export function ProductTable({ initialProducts }: ProductTableProps) {
             className="text-xs font-medium px-3 py-2 bg-stone-50 border border-stone-300 rounded-lg text-stone-700 focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer"
           >
             <option value="all">All Collections</option>
-            {KNOWN_COLLECTIONS.map((c) => (
+            {collections.map((c) => (
               <option key={c.code} value={c.code}>
-                {c.displayName}
+                {c.code} — {c.name}
+                {c.isSeasonal ? " (Seasonal)" : ""}
               </option>
             ))}
+            {collections.some((c) => c.code === collectionFilter) === false &&
+              collectionFilter !== "all" && (
+                <option value={collectionFilter}>{collectionFilter} (legacy)</option>
+              )}
           </select>
         </div>
       </div>
@@ -338,6 +352,14 @@ export function ProductTable({ initialProducts }: ProductTableProps) {
                               <Eye className="w-4 h-4" />
                             </Link>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(product)}
+                            className="p-1.5 rounded-lg text-stone-500 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                            title="Delete permanently"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                           <Link
                             href={`/admin/products/${product.id}/edit`}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-colors"
@@ -355,6 +377,20 @@ export function ProductTable({ initialProducts }: ProductTableProps) {
           </div>
         )}
       </div>
+
+      {/* Delete confirmation modal (type-to-confirm) */}
+      {deleteTarget && (
+        <DeleteProductModal
+          productId={deleteTarget.id}
+          productName={deleteTarget.name}
+          catalogueCode={deleteTarget.catalogueCode}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={() => {
+            setProducts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+            setDeleteTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }

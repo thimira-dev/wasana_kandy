@@ -3,41 +3,49 @@
 import React, { useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Search, X, RotateCcw, SlidersHorizontal, Check, Filter } from "lucide-react";
-import { KNOWN_COLLECTIONS, MAIN_CATEGORIES } from "@/lib/domain/catalogue";
+import { KNOWN_COLLECTIONS, DEFAULT_CATEGORIES } from "@/lib/domain/catalogue";
 
 interface CatalogueFilterBarProps {
   currentSearch?: string;
   currentCategory?: string;
   currentCollection?: string;
   currentSort?: string;
+  categoryNames?: string[];
+  collections?: Array<{ code: string; name: string }>;
 }
-
-const CATEGORY_ITEMS = [
-  { label: "All Categories", value: "" },
-  ...MAIN_CATEGORIES.map((cat) => ({
-    label: cat,
-    value: cat,
-  })),
-];
-
-const COLLECTION_ITEMS = [
-  { label: "All Collections", value: "" },
-  ...KNOWN_COLLECTIONS.map((col) => ({
-    label: col.name,
-    value: col.code,
-  })),
-];
 
 export function CatalogueFilterBar({
   currentSearch    = "",
   currentCategory  = "",
   currentCollection = "",
   currentSort      = "newest",
+  categoryNames,
+  collections: collectionItems,
 }: CatalogueFilterBarProps) {
   const router       = useRouter();
   const pathname     = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+
+  // Managed data lives in the database; fall back to built-in defaults
+  const CATEGORY_ITEMS = [
+    { label: "All Categories", value: "" },
+    ...((categoryNames?.length ? categoryNames : DEFAULT_CATEGORIES).map((cat) => ({
+      label: cat,
+      value: cat,
+    }))),
+  ];
+
+  const COLLECTION_ITEMS = [
+    { label: "All Collections", value: "" },
+    ...((collectionItems?.length
+      ? collectionItems
+      : KNOWN_COLLECTIONS.map((col) => ({ code: col.code, name: col.name }))
+    ).map((col) => ({
+      label: col.name,
+      value: col.code,
+    }))),
+  ];
 
   const [searchVal, setSearchVal] = React.useState(currentSearch);
   const [mobileFilterOpen, setMobileFilterOpen] = React.useState(false);

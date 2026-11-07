@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, OrderStatus, PaymentStatus } from "@prisma/client";
-import { CreateOrderInput, createOrderSchema, validateCustomerSelections } from "@/lib/domain/validation";
+import { createOrderSchema, validateCustomerSelections } from "@/lib/domain/validation";
 import { validateReadyDate, getSriLankaDateParts } from "@/lib/domain/date-rules";
 import { calculateCustomizedPrice, centsToDecimalString } from "@/lib/domain/pricing";
 import crypto from "crypto";
+
+export class OrderValidationError extends Error {}
 
 export class OrderService {
   /**
@@ -72,13 +74,13 @@ export class OrderService {
     });
 
     if (!branch || !branch.isActive) {
-      throw new Error("The selected pickup branch is invalid or unavailable.");
+      throw new OrderValidationError("The selected pickup branch is invalid or unavailable.");
     }
 
     // 3. Server-side Ready Date Validation (4-day minimum rule in Asia/Colombo)
     const dateCheck = validateReadyDate(validated.readyDate, new Date());
     if (!dateCheck.isValid) {
-      throw new Error(dateCheck.error || "The selected cake ready date is invalid.");
+      throw new OrderValidationError(dateCheck.error || "The selected cake ready date is invalid.");
     }
 
     // 4. Validate Product Existence & Publication State
@@ -102,7 +104,7 @@ export class OrderService {
     });
 
     if (!product || !product.isActive || !product.published) {
-      throw new Error("The selected cake is no longer available. Please select another cake.");
+      throw new OrderValidationError("The selected cake is no longer available. Please select another cake.");
     }
 
     // 5. Server-side Customization Validation
@@ -113,7 +115,7 @@ export class OrderService {
 
     if (!customizationCheck.isValid) {
       const firstError = Object.values(customizationCheck.errors)[0];
-      throw new Error(firstError || "One of your customization choices is invalid. Please review your cake.");
+      throw new OrderValidationError(firstError || "One of your customization choices is invalid. Please review your cake.");
     }
 
     // 6. Authoritative Server-side Price Calculation
@@ -136,7 +138,7 @@ export class OrderService {
         if (optionId) {
           const matchedOpt = group.options.find((opt) => opt.id === optionId && opt.isActive);
           if (!matchedOpt) {
-            throw new Error(`The selected option for "${group.name}" is no longer available.`);
+            throw new OrderValidationError(`The selected option for "${group.name}" is no longer available.`);
           }
 
           verifiedOptionAdjustments.push({
@@ -227,8 +229,15 @@ export class OrderService {
     });
   }
 
+  static async getPaymentOrder(orderNumber: string, accessToken: string, db: Prisma.TransactionClient = prisma) {
+    return db.order.findFirst({
+      where: { orderNumber, accessToken },
+      include: { branch: true, paymentAttempts: { orderBy: { createdAt: "desc" }, take: 1 } },
+    });
+  }
+
   /**
-   * Secure lookup for payment placeholder page using orderNumber and accessToken
+   * Guest lookup using orderNumber and accessToken (tokens must never be placed in URLs)
    * (Prevents public customer enumeration attacks).
    */
   static async getOrderByNumberAndToken(orderNumber: string, accessToken: string) {
@@ -244,5 +253,104 @@ export class OrderService {
         },
       },
     });
+  }
+
+  /* ───────────────────────── ADMIN DASHBOARD (view-only) ───────────────────────── */
+
+  static async getAdminOrders(filters?: {
+    search?: string;
+    paymentStatus?: string;
+    orderStatus?: string;
+    branchId?: string;
+  }) {
+    const where: Prisma.OrderWhereInput = {};
+
+    if (filters?.paymentStatus && filters.paymentStatus !== "all") {
+      const match = Object.values(PaymentStatus).find((s) => s === filters.paymentStatus);
+      if (match) where.paymentStatus = match;
+    }
+    if (filters?.orderStatus && filters.orderStatus !== "all") {
+      const match = Object.values(OrderStatus).find((s) => s === filters.orderStatus);
+      if (match) where.orderStatus = match;
+    }
+    if (filters?.branchId && filters.branchId !== "all") {
+      where.branchId = filters.branchId;
+    }
+
+    const search = filters?.search?.trim();
+    if (search) {
+      where.OR = [
+        { orderNumber: { contains: search, mode: "insensitive" } },
+        { customerName: { contains: search, mode: "insensitive" } },
+        { customerEmail: { contains: search, mode: "insensitive" } },
+        { phonePrimary: { contains: search } },
+      ];
+    }
+
+    return await prisma.order.findMany({
+      where,
+      include: {
+        branch: true,
+        _count: {
+          select: {
+            items: true,
+            paymentAttempts: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  static async getAdminOrderDetail(id: string) {
+    return await prisma.order.findUnique({
+      where: { id },
+      include: {
+        branch: true,
+        items: {
+          orderBy: { createdAt: "asc" },
+          include: {
+            customizations: true,
+            product: {
+              select: {
+                images: {
+                  orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+                  take: 1,
+                },
+              },
+            },
+          },
+        },
+        paymentAttempts: {
+          orderBy: { createdAt: "desc" },
+        },
+        paymentEvents: {
+          orderBy: { receivedAt: "desc" },
+        },
+      },
+    });
+  }
+
+  static async getAdminOrderStats() {
+    const [paidAggregate, pendingCount, confirmedCount, totalCount, preparingCount] = await Promise.all([
+      prisma.order.aggregate({
+        where: { paymentStatus: "PAID" },
+        _sum: { total: true },
+        _count: true,
+      }),
+      prisma.order.count({ where: { orderStatus: "PAYMENT_PENDING" } }),
+      prisma.order.count({ where: { orderStatus: "CONFIRMED" } }),
+      prisma.order.count(),
+      prisma.order.count({ where: { orderStatus: "PREPARING" } }),
+    ]);
+
+    return {
+      paidRevenue: paidAggregate._sum.total?.toString() ?? "0",
+      paidCount: paidAggregate._count,
+      pendingPaymentCount: pendingCount,
+      confirmedCount,
+      preparingCount,
+      totalCount,
+    };
   }
 }

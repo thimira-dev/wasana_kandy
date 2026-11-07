@@ -1,5 +1,6 @@
 import { PrismaClient, Role, CustomizationFieldType, Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { DEFAULT_CATEGORIES, KNOWN_COLLECTIONS } from "../src/lib/domain/catalogue";
 
 const prisma = new PrismaClient();
 
@@ -806,6 +807,32 @@ async function main() {
 
     console.log(`🎂 Seeded cake: [${created.catalogueCode || "NO-CODE"}] ${created.name} (/cakes/${created.slug})`);
   }
+
+  // 4. Seed managed cake categories (examples/categories in the admin dashboard)
+  for (const [i, name] of DEFAULT_CATEGORIES.entries()) {
+    await prisma.category.upsert({
+      where: { name },
+      update: {},
+      create: { name, sortOrder: i, isActive: true },
+    });
+  }
+  console.log(`🗂️  Seeded ${DEFAULT_CATEGORIES.length} cake categories`);
+
+  // 5. Seed the physical-catalogue collection codes
+  for (const [i, c] of KNOWN_COLLECTIONS.entries()) {
+    await prisma.collection.upsert({
+      where: { code: c.code },
+      update: { name: c.name, isSeasonal: Boolean(c.isSeasonal) },
+      create: {
+        code: c.code,
+        name: c.name,
+        isSeasonal: Boolean(c.isSeasonal),
+        sortOrder: i,
+        isActive: true,
+      },
+    });
+  }
+  console.log(`🔤 Seeded ${KNOWN_COLLECTIONS.length} collection codes`);
 
   console.log("✨ Seeding completed successfully!");
 }

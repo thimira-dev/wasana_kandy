@@ -169,6 +169,33 @@ export const adminLoginSchema = z.object({
 
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 
+export const categorySchema = z.object({
+  name: z
+    .string()
+    .min(2, "Category name must be at least 2 characters")
+    .max(60, "Category name cannot exceed 60 characters")
+    .trim(),
+});
+
+export type CategoryInput = z.infer<typeof categorySchema>;
+
+export const collectionSchema = z.object({
+  code: z
+    .string()
+    .min(1, "Collection code is required")
+    .max(4, "Collection code cannot exceed 4 characters")
+    .regex(/^[a-zA-Z]+$/, "Collection code must contain only letters")
+    .transform((val) => val.trim().toUpperCase()),
+  name: z
+    .string()
+    .min(2, "Collection name must be at least 2 characters")
+    .max(80, "Collection name cannot exceed 80 characters")
+    .trim(),
+  isSeasonal: z.boolean().default(false),
+});
+
+export type CollectionInput = z.infer<typeof collectionSchema>;
+
 /**
  * Validates customer selections against configured customization groups
  */
@@ -202,6 +229,10 @@ export function validateCustomerSelections(
   for (const group of groups) {
     if (!group.isActive) continue;
 
+    if (!["SINGLE_SELECT", "TEXT", "TEXTAREA"].includes(group.fieldType)) {
+      errors[group.id] = "This cake has customization options that cannot currently be ordered online. Please contact the bakery.";
+      continue;
+    }
     const selection = selections[group.id];
 
     if (group.fieldType === "SINGLE_SELECT") {

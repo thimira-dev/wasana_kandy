@@ -26,7 +26,7 @@ export const KNOWN_COLLECTIONS: CollectionDefinition[] = [
   { code: "PC", name: "PC Collection", displayName: "PC — PC Collection" },
 ];
 
-export const MAIN_CATEGORIES = [
+export const DEFAULT_CATEGORIES = [
   "Birthday Cakes",
   "Wedding Cakes",
   "Celebration Cakes",
@@ -37,7 +37,7 @@ export const MAIN_CATEGORIES = [
   "Cup Cakes",
 ] as const;
 
-export type MainCategory = (typeof MAIN_CATEGORIES)[number];
+export type MainCategory = (typeof DEFAULT_CATEGORIES)[number];
 
 /**
  * Generates the canonical catalogue code from collection code and design number.

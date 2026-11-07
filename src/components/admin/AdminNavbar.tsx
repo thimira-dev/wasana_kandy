@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { Package, LogOut, ExternalLink, ShieldCheck } from "lucide-react";
+import { Package, LogOut, ExternalLink, ShieldCheck, Tags, ShoppingBag } from "lucide-react";
 
 interface AdminNavbarProps {
   user?: {
@@ -62,6 +62,28 @@ export function AdminNavbar({ user }: AdminNavbarProps) {
             >
               <Package className="w-4 h-4" />
               Manage Cakes
+            </Link>
+            <Link
+              href="/admin/categories"
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                pathname.startsWith("/admin/categories")
+                  ? "bg-amber-600 text-white"
+                  : "text-stone-300 hover:bg-stone-800 hover:text-white"
+              }`}
+            >
+              <Tags className="w-4 h-4" />
+              Categories
+            </Link>
+            <Link
+              href="/admin/orders"
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                pathname.startsWith("/admin/orders")
+                  ? "bg-amber-600 text-white"
+                  : "text-stone-300 hover:bg-stone-800 hover:text-white"
+              }`}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              Orders
             </Link>
           </nav>
         </div>

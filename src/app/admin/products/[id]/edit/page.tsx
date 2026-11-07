@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProductService } from "@/lib/services/product-service";
+import { CategoryService } from "@/lib/services/category-service";
+import { CollectionService } from "@/lib/services/collection-service";
 import { ProductForm } from "@/components/admin/ProductForm";
 import type { Metadata } from "next";
 
@@ -28,6 +30,20 @@ export default async function AdminEditProductPage({ params }: EditProductPagePr
 
   if (!product) {
     notFound();
+  }
+
+  const [allCategories, allCollections] = await Promise.all([
+    CategoryService.listActiveCategories(),
+    CollectionService.listActiveCollections(),
+  ]);
+
+  // Ensure the cake's currently assigned category appears in the dropdown even
+  // when it has since been deactivated or no longer exists in the table
+  if (
+    product.mainCategory &&
+    !allCategories.some((c) => c.name === product.mainCategory)
+  ) {
+    allCategories.push({ id: "legacy-main-category", name: product.mainCategory });
   }
 
   const initialData = {
@@ -72,7 +88,12 @@ export default async function AdminEditProductPage({ params }: EditProductPagePr
 
   return (
     <div className="py-2">
-      <ProductForm initialData={initialData} isEditing={true} />
+      <ProductForm
+        initialData={initialData}
+        isEditing={true}
+        categories={allCategories}
+        collections={allCollections}
+      />
     </div>
   );
 }
