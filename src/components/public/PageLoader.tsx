@@ -21,22 +21,23 @@ export default function PageLoader() {
       });
     }, 120);
 
+    let fadeTimer: ReturnType<typeof setTimeout>;
+    let hideTimer: ReturnType<typeof setTimeout>;
     const handleLoad = () => {
       setProgress(100);
-      setTimeout(() => {
+      fadeTimer = setTimeout(() => {
         setFadeOut(true);
-        setTimeout(() => setVisible(false), 600);
+        hideTimer = setTimeout(() => setVisible(false), 600);
       }, 300);
     };
 
-    if (document.readyState === "complete") {
-      handleLoad();
-    } else {
-      window.addEventListener("load", handleLoad);
-    }
+    // Hydration means the page is usable. Images, maps and other external
+    // resources must not keep the entire site covered until window.load.
+    handleLoad();
 
     return () => {
-      window.removeEventListener("load", handleLoad);
+      clearTimeout(fadeTimer);
+      clearTimeout(hideTimer);
       if (progressRef.current) clearInterval(progressRef.current);
     };
   }, []);

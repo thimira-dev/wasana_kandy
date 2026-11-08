@@ -62,3 +62,29 @@ TEST_DATABASE_URL="postgresql://postgres:password@127.0.0.1:5432/wasana_test" np
 The runner requires `TEST_DATABASE_URL`, applies all migrations, and sets both `DATABASE_URL` and `SECURITY_TEST_DATABASE_URL` to that disposable database. It never falls back to the application's `.env` database. The security integration suite verifies concurrent order retries, checkout registration, database-backed rate budgets, session revocation, simulation revenue exclusion, and late-payment review. Never point test databases at the deployed site's database.
 
 Before accepting actual payments, install and validate a real gateway adapter, test its sandbox webhooks and reconciliation, verify deployment environment variables, and run a staging checkout through the admin order view.
+
+## Function region and performance
+
+`vercel.json` pins functions to Mumbai (`bom1`) to match the configured Supabase
+pooler in `ap-south-1`. Keep the function region close to the deployed database;
+if that database moves, update this setting too. Vercel Hobby supports one region.
+See [Vercel region configuration](https://vercel.com/docs/functions/configuring-functions/region).
+A new deployment is required for this setting to take effect.
+
+During the slowdown investigation, the public `/cakes` response showed
+`x-vercel-id: bom1::iad1::...`: the request entered through Mumbai but executed
+in Washington, D.C. One HEAD request took approximately six seconds. This is a
+baseline observation, not a controlled benchmark or proof of the only cause.
+Confirm the production `DATABASE_URL` uses the same Mumbai database as local
+configuration before deploying.
+
+Repeated category, product detail, and admin session reads now share results
+within each React server render. Results do not persist across requests, so
+administrative changes and session revocations remain fresh. The opening loader
+also releases after hydration instead of waiting for all external resources.
+
+After deployment, compare repeated requests to `/cakes` and a cake detail page,
+check that `x-vercel-id` reports `bom1` for function execution, and verify catalogue
+edits and admin session revocation still take effect. Do not raise the Prisma
+connection limit solely to mask latency; the transaction pooler protects the
+small database from excessive serverless connections.

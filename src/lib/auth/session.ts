@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { SignJWT, jwtVerify } from "jose";
 import { createHash, randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
@@ -55,10 +56,11 @@ export async function verifySessionToken(token: string): Promise<AdminUserSessio
   }
 }
 
-export async function getAdminSession(): Promise<AdminUserSession | null> {
+// Layout and page authorization share one lookup, scoped to this render only.
+export const getAdminSession = cache(async (): Promise<AdminUserSession | null> => {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
   return token ? verifySessionToken(token) : null;
-}
+});
 
 export async function revokeAdminSession(): Promise<void> {
   const token = (await cookies()).get(COOKIE_NAME)?.value;

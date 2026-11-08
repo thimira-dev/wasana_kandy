@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { categorySchema } from "@/lib/domain/validation";
 
@@ -15,7 +16,8 @@ export class CategoryService {
   /**
    * Active categories ordered for dropdowns, navigation menus, and filter bars
    */
-  static async listActiveCategories() {
+  // Deduplicate navigation and page reads within a render; fresh on the next request.
+  static listActiveCategories = cache(async () => {
     return await prisma.category.findMany({
       where: { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -24,7 +26,7 @@ export class CategoryService {
         name: true,
       },
     });
-  }
+  });
 
   /**
    * All categories for the admin management screen, including inactive ones,

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { productSchema } from "@/lib/domain/validation";
 import { generateCatalogueCode, normalizeCodeSearch } from "@/lib/domain/catalogue";
@@ -81,7 +82,8 @@ export class ProductService {
   /**
    * Fetches an individual published cake by its slug with its active customization groups and options
    */
-  static async getProductBySlug(slug: string) {
+  // Metadata and the page share this read during the same server render.
+  static getProductBySlug = cache(async (slug: string) => {
     return await prisma.product.findFirst({
       where: {
         published: true,
@@ -115,7 +117,7 @@ export class ProductService {
         },
       },
     });
-  }
+  });
 
   /**
    * Fetches published related cakes from the same category or general catalogue (excluding current product ID)
